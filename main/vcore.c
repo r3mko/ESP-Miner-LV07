@@ -103,7 +103,8 @@ esp_err_t VCORE_set_voltage(float core_voltage, GlobalState * global_state)
     return ESP_OK;
 }
 
-uint16_t VCORE_get_voltage_mv(GlobalState * global_state) {
+uint16_t VCORE_get_voltage_mv(GlobalState * global_state)
+{
     switch (global_state->device_model) {
         case DEVICE_MAX:
         case DEVICE_ULTRA:
@@ -114,4 +115,6 @@ uint16_t VCORE_get_voltage_mv(GlobalState * global_state) {
             return (TPS546_get_vout() * 1000) / global_state->voltage_domain;
         default:
     }
+
+    return 0;
 }
