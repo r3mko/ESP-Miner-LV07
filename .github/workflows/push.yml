@@ -17,10 +17,6 @@ jobs:
       run: |
         npm ci
         npm run build
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.13'
-        cache: 'pip'
     - name: esp-idf build
       uses: espressif/esp-idf-ci-action@v1
       with:
@@ -28,6 +24,10 @@ jobs:
         target: esp32s3
         command: GITHUB_ACTIONS="true" idf.py build
         path: '.'
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+        cache: 'pip'
     - run: pip install esptool
     - name: "Create factory/merged image"
       run: "./merge_bin.sh ./esp-miner-merged.bin"
