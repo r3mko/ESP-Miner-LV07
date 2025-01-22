@@ -1,5 +1,5 @@
-name: Build Firmware
-on: [push, pull_request]
+name: Build Firmware (new)
+on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -11,12 +11,16 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '22.12.0'
+        node-version: '22.13.1'
     - name: Build web dist
       working-directory: ./main/http_server/axe-os
       run: |
         npm ci
         npm run build
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+        cache: 'pip'
     - name: esp-idf build
       uses: espressif/esp-idf-ci-action@v1
       with:
@@ -24,10 +28,6 @@ jobs:
         target: esp32s3
         command: GITHUB_ACTIONS="true" idf.py build
         path: '.'
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
-        cache: 'pip'
     - run: pip install esptool
     - name: "Create factory/merged image"
       run: "./merge_bin.sh ./esp-miner-merged.bin"
