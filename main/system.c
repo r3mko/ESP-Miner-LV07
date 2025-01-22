@@ -29,6 +29,7 @@
 #include "display.h"
 #include "input.h"
 #include "screen.h"
+#include "TMP1075.h"
 #include "vcore.h"
 
 static const char * TAG = "SystemModule";
@@ -105,6 +106,7 @@ void SYSTEM_init_peripherals(GlobalState * GLOBAL_STATE) {
             break;
         case DEVICE_LV07:
             EMC2302_init(nvs_config_get_u16(NVS_CONFIG_INVERT_FAN_POLARITY, 1));
+            TMP1075_init();
             break;
         default:
     }

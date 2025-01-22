@@ -13,6 +13,7 @@ SRCS
     "input.c"
     "system.c"
     "TPS546.c"
+    "TMP1075.c"
     "vcore.c"
     "work_queue.c"
     "nvs_device.c"
