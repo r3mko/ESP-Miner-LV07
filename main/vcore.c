@@ -15,7 +15,7 @@
 #define BITAXE_IFS 0.000098921 // (Vrfs / Rfs) x (127/16)  -> Vrfs = 0.997, Rfs = 80000
 #define BITAXE_RA 4750.0       // R14
 #define BITAXE_RB 3320.0       // R15
-#define BITAXE_VNOM 1.451   // this is with the current DAC set to 0. Should be pretty close to (VFB*(RA+RB))/RB
+#define BITAXE_VNOM 1.451      // this is with the current DAC set to 0. Should be pretty close to (VFB*(RA+RB))/RB
 #define BITAXE_VMAX 2.39
 #define BITAXE_VMIN 0.046
 

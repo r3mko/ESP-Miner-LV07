@@ -1,5 +1,7 @@
-name: Build Firmware
-on: [push, pull_request]
+name: Build Firmware [Push]
+
+on: [push]
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -11,7 +13,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '22.12.0'
+        node-version: '22.13.1'
     - name: Build web dist
       working-directory: ./main/http_server/axe-os
       run: |
@@ -26,7 +28,7 @@ jobs:
         path: '.'
     - uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
+        python-version: '3.13'
         cache: 'pip'
     - run: pip install esptool
     - name: "Create factory/merged image"
