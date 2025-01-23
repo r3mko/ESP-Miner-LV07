@@ -10,6 +10,7 @@
 #include "i2c_bitaxe.h"
 #include "DS4432U.h"
 #include "EMC2101.h"
+#include "EMC2302.h"
 #include "INA260.h"
 #include "adc.h"
 #include "global_state.h"
@@ -21,6 +22,7 @@
 #include "vcore.h"
 #include "utils.h"
 #include "TPS546.h"
+#include "TMP1075.h"
 #include "esp_psram.h"
 
 #define GPIO_ASIC_ENABLE CONFIG_GPIO_ASIC_ENABLE
@@ -86,6 +88,9 @@ static esp_err_t test_fan_sense(GlobalState * GLOBAL_STATE)
         case DEVICE_GAMMA:
             fan_speed = EMC2101_get_fan_speed();
             break;
+        case DEVICE_LV07:
+            fan_speed = EMC2302_get_fan_speed(0);
+            break;
         default:
     }
     ESP_LOGI(TAG, "fanSpeed: %d", fan_speed);
@@ -142,6 +147,7 @@ esp_err_t test_display(GlobalState * GLOBAL_STATE) {
         case DEVICE_ULTRA:
         case DEVICE_SUPRA:
         case DEVICE_GAMMA:
+        case DEVICE_LV07:
             if (display_init(GLOBAL_STATE) != ESP_OK) {
                 display_msg("DISPLAY:FAIL", GLOBAL_STATE);
                 return ESP_FAIL;
@@ -167,6 +173,7 @@ esp_err_t test_input(GlobalState * GLOBAL_STATE) {
         case DEVICE_ULTRA:
         case DEVICE_SUPRA:
         case DEVICE_GAMMA:
+        case DEVICE_LV07:
             if (input_init(NULL, reset_self_test) != ESP_OK) {
                 display_msg("INPUT:FAIL", GLOBAL_STATE);
                 return ESP_FAIL;
@@ -187,6 +194,7 @@ esp_err_t test_screen(GlobalState * GLOBAL_STATE) {
         case DEVICE_ULTRA:
         case DEVICE_SUPRA:
         case DEVICE_GAMMA:
+        case DEVICE_LV07:
             if (screen_start(GLOBAL_STATE) != ESP_OK) {
                 display_msg("SCREEN:FAIL", GLOBAL_STATE);
                 return ESP_FAIL;
@@ -221,6 +229,8 @@ esp_err_t test_voltage_regulator(GlobalState * GLOBAL_STATE) {
             gpio_set_level(GPIO_ASIC_ENABLE, 0);
             break;
         case DEVICE_GAMMA:
+        case DEVICE_LV07:
+            break;
         default:
     }
 
@@ -246,6 +256,7 @@ esp_err_t test_voltage_regulator(GlobalState * GLOBAL_STATE) {
             }
             break;
         case DEVICE_GAMMA:
+        case DEVICE_LV07:
             break;
         default:
     }
@@ -270,6 +281,12 @@ esp_err_t test_init_peripherals(GlobalState * GLOBAL_STATE) {
             EMC2101_set_ideality_factor(EMC2101_IDEALITY_1_0319);
             EMC2101_set_beta_compensation(EMC2101_BETA_11);
             break;
+        case DEVICE_LV07:
+            ESP_RETURN_ON_ERROR(EMC2302_init(nvs_config_get_u16(NVS_CONFIG_INVERT_FAN_POLARITY, 1)), TAG, "EMC2302 init failed!");
+            EMC2302_set_fan_speed(0, 1);
+            EMC2302_set_fan_speed(1, 1);
+            TMP1075_init();
+            break;
         default:
     }
 
@@ -284,6 +301,8 @@ esp_err_t test_init_peripherals(GlobalState * GLOBAL_STATE) {
             }
             break;
         case DEVICE_GAMMA:
+        case DEVICE_LV07:
+            break;
         default:
     }
 
@@ -479,6 +498,8 @@ void self_test(void * pvParameters)
                 tests_done(GLOBAL_STATE, TESTS_FAILED);
             }
             break;
+        case DEVICE_LV07:
+            break;
         default:
     }
 
@@ -514,6 +535,8 @@ void self_test(void * pvParameters)
                     tests_done(GLOBAL_STATE, TESTS_FAILED);
                 }
             break;
+        case DEVICE_LV07:
+            break;
         default:
     }
 
@@ -534,6 +557,7 @@ static void tests_done(GlobalState * GLOBAL_STATE, bool test_result)
         case DEVICE_ULTRA:
         case DEVICE_SUPRA:
         case DEVICE_GAMMA:
+        case DEVICE_LV07:
             GLOBAL_STATE->SELF_TEST_MODULE.result = test_result;
             GLOBAL_STATE->SELF_TEST_MODULE.finished = true;
             break;

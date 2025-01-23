@@ -124,6 +124,7 @@ void POWER_MANAGEMENT_task(void * pvParameters)
 			}
             break;
         case DEVICE_GAMMA:
+        case DEVICE_LV07:
             break;
         default:
     }
@@ -311,11 +312,12 @@ void POWER_MANAGEMENT_task(void * pvParameters)
                     EMC2101_set_fan_speed((float) fs / 100);
                     break;
                 case DEVICE_LV07:
-                    fs = (float) nvs_config_get_u16(NVS_CONFIG_FAN_SPEED, 100);
+                    float fs = (float) nvs_config_get_u16(NVS_CONFIG_FAN_SPEED, 100);
                     //ESP_LOGI(TAG, "Manual Fan = %.02f", fs);
                     power_management->fan_perc = fs;
                     EMC2302_set_fan_speed(0, (float) fs / 100);
                     EMC2302_set_fan_speed(1, (float) fs / 100);
+                    break;
                 default:
             }
         }

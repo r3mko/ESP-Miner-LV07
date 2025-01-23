@@ -121,6 +121,8 @@ void SYSTEM_init_peripherals(GlobalState * GLOBAL_STATE) {
             }
             break;
         case DEVICE_GAMMA:
+        case DEVICE_LV07:
+            break;
         default:
     }
 
