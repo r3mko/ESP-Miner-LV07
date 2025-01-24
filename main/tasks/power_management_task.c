@@ -296,27 +296,23 @@ void POWER_MANAGEMENT_task(void * pvParameters)
             default:
         }
 
-
         if (nvs_config_get_u16(NVS_CONFIG_AUTO_FAN_SPEED, 1) == 1) {
-
             power_management->fan_perc = (float)automatic_fan_speed(power_management->chip_temp_avg, GLOBAL_STATE);
-
         } else {
+            float fs = (float) nvs_config_get_u16(NVS_CONFIG_FAN_SPEED, 100);
+            power_management->fan_perc = fs;
+
             switch (GLOBAL_STATE->device_model) {
                 case DEVICE_MAX:
                 case DEVICE_ULTRA:
                 case DEVICE_SUPRA:
                 case DEVICE_GAMMA:
-                    float fs_g = (float) nvs_config_get_u16(NVS_CONFIG_FAN_SPEED, 100);
-                    power_management->fan_perc = fs_g;
-                    EMC2101_set_fan_speed((float) fs_g / 100);
+                    EMC2101_set_fan_speed((float) fs / 100);
                     break;
                 case DEVICE_LV07:
-                    float fs_l = (float) nvs_config_get_u16(NVS_CONFIG_FAN_SPEED, 100);
-                    //ESP_LOGI(TAG, "Manual Fan = %.02f", fs_l);
-                    power_management->fan_perc = fs_l;
-                    EMC2302_set_fan_speed(0, (float) fs_l / 100);
-                    EMC2302_set_fan_speed(1, (float) fs_l / 100);
+                    //ESP_LOGI(TAG, "Manual Fan = %.02f", fs);
+                    EMC2302_set_fan_speed(0, (float) fs / 100);
+                    EMC2302_set_fan_speed(1, (float) fs / 100);
                     break;
                 default:
             }
