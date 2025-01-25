@@ -104,7 +104,7 @@
 
                         <h6>Input Voltage <span style="float: right;">{{info.voltage}} V</span></h6>
                         <div class="relative">
-                            <p-progressBar [value]="(info.voltage / (info.vin * 110%)) * 100" [style]="{ height: '6px' }">
+                            <p-progressBar [value]="(info.voltage / ((110 * info.vin) / 100)) * 100" [style]="{ height: '6px' }">
                                 <ng-template pTemplate="content" let-value></ng-template>
                             </p-progressBar>
                             <!-- Add marker at 5.0V (90.91% of 5.5V) -->
@@ -113,7 +113,7 @@
                                 <small class="absolute text-white" style="top: -1.25rem; transform: translateX(-50%)">{{info.vin}}</small>
                             </div>
                         </div>
-                        <span class="danger" *ngIf="info.voltage < (info.vin * 95.83%)">&nbsp; Danger: Low voltage</span>
+                        <span class="danger" *ngIf="info.voltage < ((95,83 * info.vin) / 100)">&nbsp; Danger: Low voltage</span>
                     </div>
 
                     <div class="col-12">

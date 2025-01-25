@@ -60,6 +60,7 @@ export class SystemService {
           autofanspeed: 1,
           fanspeed: 100,
           fanrpm: 0,
+          vin: 5,
 
           boardtemp1: 30,
           boardtemp2: 40,
