@@ -101,6 +101,7 @@ typedef struct
     AsicFunctions ASIC_functions;
     double asic_job_frequency_ms;
     uint32_t ASIC_difficulty;
+    uint8_t vin;
 
     work_queue stratum_queue;
     work_queue ASIC_jobs_queue;

@@ -15,12 +15,19 @@
 
 #define TPS546_INIT_FREQUENCY 650 /* KHz */
 
-/* vin voltage */
-#define TPS546_INIT_VIN_ON 11.5 /* V */
-#define TPS546_INIT_VIN_OFF 11.0 /* V */
-#define TPS546_INIT_VIN_UV_WARN_LIMIT 11.0 /* V */
-#define TPS546_INIT_VIN_OV_FAULT_LIMIT 13.5 /* V */
-#define TPS546_INIT_VIN_OV_FAULT_RESPONSE 0xB7 /* retry 6 times */
+/* 5V vin voltage */
+#define TPS546_INIT_5V_VIN_ON  4.8  /* V */
+#define TPS546_INIT_5V_VIN_OFF 4.5  /* V */
+#define TPS546_INIT_5V_VIN_UV_WARN_LIMIT 4.5 /* V */
+#define TPS546_INIT_5V_VIN_OV_FAULT_LIMIT 6.0 /* V */
+#define TPS546_INIT_5V_VIN_OV_FAULT_RESPONSE 0xB7  /* retry 6 times */
+
+/* 12V vin voltage */
+#define TPS546_INIT_12V_VIN_ON 11.5 /* V */
+#define TPS546_INIT_12V_VIN_OFF 11.0 /* V */
+#define TPS546_INIT_12V_VIN_UV_WARN_LIMIT 11.0 /* V */
+#define TPS546_INIT_12V_VIN_OV_FAULT_LIMIT 13.5 /* V */
+#define TPS546_INIT_12V_VIN_OV_FAULT_RESPONSE 0xB7 /* retry 6 times */
 
 /* vout voltage */
 #define TPS546_INIT_SCALE_LOOP 0.25  /* Voltage Scale factor */
@@ -67,10 +74,10 @@
 #define ON_OFF_CONFIG_DELAY 0x00 // turn off DELAY bit
 
 /* public functions */
-int TPS546_init(void);
+int TPS546_init(uint8_t);
 void TPS546_read_mfr_info(uint8_t *);
 void TPS546_set_mfr_info(void);
-void TPS546_write_entire_config(void);
+void TPS546_write_entire_config(uint8_t);
 int TPS546_get_frequency(void);
 void TPS546_set_frequency(int);
 int TPS546_get_temperature(void);

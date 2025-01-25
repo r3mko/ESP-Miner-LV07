@@ -561,6 +561,8 @@ static esp_err_t GET_system_info(httpd_req_t * req)
     cJSON_AddNumberToObject(root, "fanspeed", GLOBAL_STATE->POWER_MANAGEMENT_MODULE.fan_perc);
     cJSON_AddNumberToObject(root, "fanrpm", GLOBAL_STATE->POWER_MANAGEMENT_MODULE.fan_rpm);
 
+    cJSON_AddNumberToObject(root, "vin", GLOBAL_STATE->vin);
+
     free(ssid);
     free(hostname);
     free(stratumURL);

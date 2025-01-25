@@ -27,20 +27,28 @@ esp_err_t VCORE_init(GlobalState * global_state) {
         case DEVICE_ULTRA:
         case DEVICE_SUPRA:
             if (global_state->board_version >= 402 && global_state->board_version <= 499) {
-                if (TPS546_init() != ESP_OK) {
+                if (TPS546_init(5) != ESP_OK) {
                     ESP_LOGE(TAG, "TPS546 init failed!");
                     return ESP_FAIL;
                 }
             } else {
                 ESP_RETURN_ON_ERROR(DS4432U_init(), TAG, "DS4432 init failed!");
             }
+            GLOBAL_STATE.vin = 5;
             break;
         case DEVICE_GAMMA:
-        case DEVICE_LV07:
-            if (TPS546_init() != ESP_OK) {
+            if (TPS546_init(5) != ESP_OK) {
                 ESP_LOGE(TAG, "TPS546 init failed!");
                 return ESP_FAIL;
             }
+            GLOBAL_STATE.vin = 5;
+            break;
+        case DEVICE_LV07:
+            if (TPS546_init(12) != ESP_OK) {
+                ESP_LOGE(TAG, "TPS546 init failed!");
+                return ESP_FAIL;
+            }
+            GLOBAL_STATE.vin = 12;
             break;
         // case DEVICE_HEX:
         default:
