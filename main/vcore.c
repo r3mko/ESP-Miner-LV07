@@ -6,6 +6,7 @@
 #include "adc.h"
 #include "DS4432U.h"
 #include "TPS546.h"
+#include "global_state.h"
 
 #define TPS40305_VFB 0.6
 
