@@ -22,6 +22,8 @@
 
 static const char *TAG = "vcore.c";
 
+static GlobalState * GLOBAL_STATE;
+
 esp_err_t VCORE_init(GlobalState * global_state) {
     switch (global_state->device_model) {
         case DEVICE_MAX:
