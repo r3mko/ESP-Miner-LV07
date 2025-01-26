@@ -23,7 +23,7 @@ export class GithubUpdateService {
 
   public getReleases(): Observable<GithubRelease[]> {
     return this.httpClient.get<GithubRelease[]>(
-      'https://api.github.com/repos/r3mko/esp-miner/releases'
+      'https://api.github.com/repos/r3mko/esp-miner-lv07/releases'
     ).pipe(
       map((releases: GithubRelease[]) => releases.filter((release: GithubRelease) => !release.prerelease))
     );
