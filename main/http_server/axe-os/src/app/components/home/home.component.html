@@ -110,7 +110,7 @@
                             <!-- Add marker at 5.0V (90.91% of 5.5V) -->
                             <!-- Add marker at 12.0V (90.91% of 13.2V) -->
                             <div class="absolute bg-white" style="left: 90.5%; top: 0; width: 3px; height: 6px;">
-                                <small class="absolute text-white" style="top: -1.25rem; transform: translateX(-50%)">{{info.vin}}</small>
+                                <small class="absolute text-white" style="top: -1.25rem; transform: translateX(-50%)">{{info.vin | number: '1.1-1'}}</small>
                             </div>
                         </div>
                         <span class="danger" *ngIf="info.voltage < ((95.83 * info.vin) / 100)">&nbsp; Danger: Low voltage</span>
