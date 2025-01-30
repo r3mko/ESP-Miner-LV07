@@ -22,7 +22,8 @@
 #include "vcore.h"
 #include "utils.h"
 #include "TPS546.h"
-#include "TMP1075.h"
+#include "TMP1075_1.h"
+#include "TMP1075_2.h"
 #include "esp_psram.h"
 
 #define GPIO_ASIC_ENABLE CONFIG_GPIO_ASIC_ENABLE
