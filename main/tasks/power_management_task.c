@@ -12,7 +12,8 @@
 #include "nvs_config.h"
 #include "serial.h"
 #include "TPS546.h"
-#include "TMP1075.h"
+#include "TMP1075_1.h"
+#include "TMP1075_2.h"
 #include "vcore.h"
 
 #define GPIO_ASIC_ENABLE CONFIG_GPIO_ASIC_ENABLE
@@ -267,7 +268,7 @@ void POWER_MANAGEMENT_task(void * pvParameters)
                 //max6689_read_temp(temps);
                 //ESP_LOGI(TAG,"Diode Temp: [%d,%d,%d,%d,%d,%d]",temps[0],temps[1],temps[2],temps[3],temps[4],temps[5]);
 
-                power_management->chip_temp_avg = (TMP1075_read_temperature(0) + TMP1075_read_temperature(1)) / 2 + 5;
+                power_management->chip_temp_avg = (TMP1075_1_read_temperature() + TMP1075_2_read_temperature()) / 2 + 5;
                 power_management->vr_temp = (float)TPS546_get_temperature();
 
                 // EMC2302 will give bad readings if the ASIC is turned off
