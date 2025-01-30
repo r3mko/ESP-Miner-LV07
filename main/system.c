@@ -29,8 +29,8 @@
 #include "display.h"
 #include "input.h"
 #include "screen.h"
-#include "TMP1075_1.h"
-#include "TMP1075_2.h"
+#include "./TMP1075/TMP1075_1.h"
+#include "./TMP1075/TMP1075_2.h"
 #include "vcore.h"
 
 static const char * TAG = "SystemModule";

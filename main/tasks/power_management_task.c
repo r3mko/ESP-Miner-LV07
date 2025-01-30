@@ -12,8 +12,8 @@
 #include "nvs_config.h"
 #include "serial.h"
 #include "TPS546.h"
-#include "TMP1075_1.h"
-#include "TMP1075_2.h"
+#include "./TMP1075/TMP1075_1.h"
+#include "./TMP1075/TMP1075_2.h"
 #include "vcore.h"
 
 #define GPIO_ASIC_ENABLE CONFIG_GPIO_ASIC_ENABLE
