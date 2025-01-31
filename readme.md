@@ -1,5 +1,8 @@
 # LV07 custom firmware
 
+This Git repository aims to stay as close as possible to the original project, with no modifications beyond adding support for the LV07.
+Our goal is to maintain full compatibility while extending functionality to this hardware without altering the core project.
+
 > [!CAUTION]
 > This custom firmware (based on the [Bitaxe](https://github.com/skot/bitaxe) firmware) only works on the LV07 (12V and two BM1366).
 
