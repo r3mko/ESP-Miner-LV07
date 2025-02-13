@@ -165,7 +165,7 @@ int16_t VCORE_get_voltage_mv(GlobalState * global_state) {
         case DEVICE_GAMMATURBO:
             return ADC_get_vcore();
         case DEVICE_LV07:
-            return TPS546_get_vout() * 1000
+            return TPS546_get_vout() * 1000;
         // case DEVICE_HEX:
         default:
     }
