@@ -2,7 +2,6 @@
 
 #define INTERNAL_OFFSET 5 //degrees C
 
-
 esp_err_t Thermal_init(DeviceModel device_model, bool polarity) {
         //init the EMC2101, if we have one
     switch (device_model) {
@@ -90,7 +89,7 @@ float Thermal_get_chip_temp(GlobalState * GLOBAL_STATE) {
         case DEVICE_GAMMATURBO:
             return EMC2103_get_external_temp();
         case DEVICE_LV07:
-            return (TMP1075_1_read_temperature() + TMP1075_2_read_temperature()) / 2 + 5;
+            return (TMP1075_1_read_temperature() + TMP1075_2_read_temperature()) / 2 + INTERNAL_OFFSET;
         default:
     }
 

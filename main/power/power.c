@@ -10,7 +10,7 @@
 #define SUPRA_POWER_OFFSET 5 // Watts
 #define GAMMA_POWER_OFFSET 5 // Watts
 #define GAMMATURBO_POWER_OFFSET 5 // Watts
-#define LV07_POWER_OFFSET 6 // Watts
+#define LV07_POWER_OFFSET 9 // Watts
 
 esp_err_t Power_disable(GlobalState * GLOBAL_STATE) {
 
