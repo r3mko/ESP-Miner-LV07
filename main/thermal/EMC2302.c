@@ -4,6 +4,14 @@
 #include "i2c_bitaxe.h"
 #include "EMC2302.h"
 
+#define I2C_MASTER_SCL_IO 48            ///< GPIO number used for I2C master clock
+#define I2C_MASTER_SDA_IO 47            ///< GPIO number used for I2C master data
+#define I2C_MASTER_NUM 0                ///< I2C master i2c port number, the number of i2c peripheral interfaces available will depend on the chip
+#define I2C_MASTER_FREQ_HZ 400000       ///< I2C master clock frequency
+#define I2C_MASTER_TX_BUF_DISABLE 0     ///< I2C master doesn't need buffer
+#define I2C_MASTER_RX_BUF_DISABLE 0     ///< I2C master doesn't need buffer
+#define I2C_MASTER_TIMEOUT_MS 1000      ///< Timeout in ms
+
 static const char *TAG = "EMC2302";
 
 static i2c_master_dev_handle_t emc2302_dev_handle;
@@ -43,8 +51,8 @@ uint16_t EMC2302_get_fan_speed(uint8_t devicenum)
     uint8_t TACH_LSB_REG = EMC2302_TACH1_LSB + (devicenum * 0x10);
     uint8_t TACH_MSB_REG = EMC2302_TACH1_MSB + (devicenum * 0x10);
 
-    ESP_ERROR_CHECK(i2c_bitaxe_register_read(emc2302_dev_handle,TACH_LSB_REG, &tach_lsb, 1));
-    ESP_ERROR_CHECK(i2c_bitaxe_register_read(emc2302_dev_handle,TACH_MSB_REG, &tach_msb, 1));
+    ESP_ERROR_CHECK(i2c_bitaxe_register_read(emc2302_dev_handle, TACH_LSB_REG, &tach_lsb, 1));
+    ESP_ERROR_CHECK(i2c_bitaxe_register_read(emc2302_dev_handle, TACH_MSB_REG, &tach_msb, 1));
 
     //ESP_LOGI(TAG, "Raw Fan Speed[%d] = %02X %02X", devicenum, tach_msb, tach_lsb);  // DEBUG
     RPM = (tach_msb << 5) + ((tach_lsb >> 3) & 0x1F);
