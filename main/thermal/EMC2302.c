@@ -14,7 +14,7 @@ esp_err_t EMC2302_init(bool invertPolarity) {
         return ESP_FAIL;
     }
 
-    ESP_LOGI(TAG, "EMC2302 init with polarity %d", invertPolarity);
+    ESP_LOGI(TAG, "Initializing: EMC2302 fan configuration (RNG=00) and polarity (%d)", invertPolarity);
 
     // Set fan range to 00: 500 RPM minimum, TACH count multiplier = 1
     // Fan config (default) before register write: 2B = 00101011

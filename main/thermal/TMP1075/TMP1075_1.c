@@ -16,6 +16,8 @@ static i2c_master_dev_handle_t tmp1075_1_dev_handle;
  * @return esp_err_t ESP_OK on success, or an error code on failure.
  */
 esp_err_t TMP1075_1_init(void) {
+    ESP_LOGI(TAG, "Initializing: Temperature sensor 1");
+
     return i2c_bitaxe_add_device(TMP1075_1_I2CADDR_DEFAULT, &tmp1075_1_dev_handle, TAG);
 }
 
