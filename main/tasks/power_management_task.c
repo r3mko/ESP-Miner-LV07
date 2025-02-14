@@ -38,13 +38,13 @@ static const char * TAG = "power_management";
 //     return value;
 // }
 
-// Set the fan speed between 20% min and 100% max based on chip temperature as input.
-// The fan speed increases from 20% to 100% proportionally to the temperature increase from 50 and THROTTLE_TEMP
+// Set the fan speed between 30% min and 100% max based on chip temperature as input.
+// The fan speed increases from 30% to 100% proportionally to the temperature increase from 45 and THROTTLE_TEMP
 static double automatic_fan_speed(float chip_temp, GlobalState * GLOBAL_STATE)
 {
     double result = 0.0;
     double min_temp = 45.0;
-    double min_fan_speed = 25.0;
+    double min_fan_speed = 30.0;
 
     if (chip_temp < min_temp) {
         result = min_fan_speed;
