@@ -21,8 +21,7 @@ esp_err_t TMP1075_2_init(void) {
     return i2c_bitaxe_add_device(TMP1075_2_I2CADDR_DEFAULT, &tmp1075_2_dev_handle, TAG);
 }
 
-uint8_t TMP1075_2_read_temperature(void)
-{
+uint8_t TMP1075_2_read_temperature(void) {
     uint8_t data[2];
 
     ESP_ERROR_CHECK(i2c_bitaxe_register_read(tmp1075_2_dev_handle, TMP1075_2_TEMP_REG, data, 2));

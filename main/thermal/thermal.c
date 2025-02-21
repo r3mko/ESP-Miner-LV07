@@ -3,7 +3,7 @@
 #define INTERNAL_OFFSET 5 //degrees C
 
 esp_err_t Thermal_init(DeviceModel device_model, bool polarity) {
-        //init the EMC2101, if we have one
+    //init the EMC2101, if we have one
     switch (device_model) {
         case DEVICE_MAX:
         case DEVICE_ULTRA:
@@ -31,7 +31,6 @@ esp_err_t Thermal_init(DeviceModel device_model, bool polarity) {
 
 //percent is a float between 0.0 and 1.0
 esp_err_t Thermal_set_fan_percent(DeviceModel device_model, float percent) {
-
     switch (device_model) {
         case DEVICE_MAX:
         case DEVICE_ULTRA:

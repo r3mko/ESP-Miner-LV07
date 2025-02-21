@@ -29,8 +29,7 @@ esp_err_t EMC2302_init(bool invertPolarity) {
 }
 
 // Set fan speed to a given percent
-void EMC2302_set_fan_speed(uint8_t devicenum, float percent)
-{
+void EMC2302_set_fan_speed(uint8_t devicenum, float percent) {
     uint8_t speed;
 	uint8_t FAN_SETTING_REG = EMC2302_FAN1_SETTING + (devicenum * 0x10);
 
@@ -39,8 +38,7 @@ void EMC2302_set_fan_speed(uint8_t devicenum, float percent)
 }
 
 // Get fan speed
-uint16_t EMC2302_get_fan_speed(uint8_t devicenum)
-{
+uint16_t EMC2302_get_fan_speed(uint8_t devicenum) {
     uint8_t tach_lsb, tach_msb;
     uint16_t RPM;
     uint8_t TACH_LSB_REG = EMC2302_TACH1_LSB + (devicenum * 0x10);
@@ -66,14 +64,12 @@ uint16_t EMC2302_get_fan_speed(uint8_t devicenum)
     return RPM;
 }
 
-float EMC2302_get_external_temp(void)
-{
+float EMC2302_get_external_temp(void) {
     // We don't have temperature on this chip, so fake it
     return 0;
 }
 
-uint8_t EMC2302_get_internal_temp(void)
-{
+uint8_t EMC2302_get_internal_temp(void) {
     // We don't have temperature on this chip, so fake it
     return 0;
 }

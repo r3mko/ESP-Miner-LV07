@@ -48,7 +48,7 @@ static TPS546_CONFIG TPS546_CONFIG_LV07 = {
     /* vin voltage */
     .TPS546_INIT_VIN_ON = 11.5,
     .TPS546_INIT_VIN_OFF = 11.0,
-    .TPS546_INIT_VIN_UV_WARN_LIMIT = 11.0,
+    .TPS546_INIT_VIN_UV_WARN_LIMIT = 11.5,
     .TPS546_INIT_VIN_OV_FAULT_LIMIT = 13.5,
     /* vout voltage */
     .TPS546_INIT_SCALE_LOOP = 0.25,
@@ -128,8 +128,7 @@ esp_err_t VCORE_init(GlobalState * GLOBAL_STATE) {
     return ESP_OK;
 }
 
-esp_err_t VCORE_set_voltage(float core_voltage, GlobalState * global_state)
-{
+esp_err_t VCORE_set_voltage(float core_voltage, GlobalState * global_state) {
     switch (global_state->device_model) {
         case DEVICE_MAX:
         case DEVICE_ULTRA:
@@ -156,7 +155,6 @@ esp_err_t VCORE_set_voltage(float core_voltage, GlobalState * global_state)
 }
 
 int16_t VCORE_get_voltage_mv(GlobalState * global_state) {
-
     switch (global_state->device_model) {
         case DEVICE_MAX:
         case DEVICE_ULTRA:
