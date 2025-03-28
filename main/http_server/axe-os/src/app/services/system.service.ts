@@ -26,6 +26,8 @@ export class SystemService {
           current: 2237.5,
           temp: 60,
           vrTemp: 45,
+          maxPower: 25,
+          nominalVoltage: 5,
           hashRate: 475,
           bestDiff: "0",
           bestSessionDiff: "0",
@@ -62,7 +64,6 @@ export class SystemService {
           autofanspeed: 1,
           fanspeed: 100,
           fanrpm: 0,
-          vin: 5,
 
           boardtemp1: 30,
           boardtemp2: 40,

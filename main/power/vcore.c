@@ -73,19 +73,15 @@ esp_err_t VCORE_init(GlobalState * GLOBAL_STATE) {
                 ESP_RETURN_ON_ERROR(DS4432U_init(), TAG, "DS4432 init failed!");
                 ESP_RETURN_ON_ERROR(INA260_init(), TAG, "INA260 init failed!");
             }
-            GLOBAL_STATE->vin = 5;
             break;
         case DEVICE_GAMMA:
             ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_GAMMA), TAG, "TPS546 init failed!");
-            GLOBAL_STATE->vin = 5;
             break;
         case DEVICE_GAMMATURBO:
             ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_GAMMATURBO), TAG, "TPS546 init failed!");
-            GLOBAL_STATE->vin = 12;
             break;
         case DEVICE_LV07:
             ESP_RETURN_ON_ERROR(TPS546_init(TPS546_CONFIG_LV07), TAG, "TPS546 init failed!");
-            GLOBAL_STATE->vin = 12;
             break;
         // case DEVICE_HEX:
         default:

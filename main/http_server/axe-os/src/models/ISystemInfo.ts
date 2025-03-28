@@ -14,6 +14,8 @@ export interface ISystemInfo {
     current: number,
     temp: number,
     vrTemp: number,
+    maxPower: number,
+    nominalVoltage: number,
     hashRate: number,
     bestDiff: string,
     bestSessionDiff: string,
@@ -47,7 +49,6 @@ export interface ISystemInfo {
     fanspeed: number,
     fanrpm: number,
     coreVoltageActual: number,
-    vin: number,
 
     boardtemp1?: number,
     boardtemp2?: number,
