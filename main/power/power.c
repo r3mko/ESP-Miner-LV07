@@ -10,7 +10,7 @@
 #define SUPRA_POWER_OFFSET 5 // Watts
 #define GAMMA_POWER_OFFSET 5 // Watts
 #define GAMMATURBO_POWER_OFFSET 5 // Watts
-#define LV07_POWER_OFFSET 9 // Watts
+#define LV07_POWER_OFFSET 7 // Watts
 
 // max power settings
 #define MAX_MAX_POWER 25 //watts
