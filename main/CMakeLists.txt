@@ -26,6 +26,7 @@ SRCS
     "./thermal/TMP1075/TMP1075_1.c"
     "./thermal/TMP1075/TMP1075_2.c"
     "./thermal/thermal.c"
+    "./thermal/PID.c"
     "./power/TPS546.c"
     "./power/DS4432U.c"
     "./power/INA260.c"
