@@ -8,22 +8,22 @@ static const char *TAG = "EMC2302";
 
 static i2c_master_dev_handle_t emc2302_dev_handle;
 
-esp_err_t EMC2302_init(bool invertPolarity) {
+esp_err_t EMC2302_init() {
     if (i2c_bitaxe_add_device(EMC2302_I2CADDR_DEFAULT, &emc2302_dev_handle, TAG) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to add device");
         return ESP_FAIL;
     }
 
-    ESP_LOGI(TAG, "Initializing: EMC2302 fan configuration (RNG=00) and polarity (%d)", invertPolarity);
+    ESP_LOGI(TAG, "Initializing: EMC2302 fan configuration (RNG=00)");
 
     // Set fan range to 00: 500 RPM minimum, TACH count multiplier = 1
     // Fan config (default) before register write: 2B = 00101011
     ESP_ERROR_CHECK(i2c_bitaxe_register_write_byte(emc2302_dev_handle, EMC2302_FAN1_CONFIG1, 0b00001011));
     ESP_ERROR_CHECK(i2c_bitaxe_register_write_byte(emc2302_dev_handle, EMC2302_FAN2_CONFIG1, 0b00001011));
 
-    if (invertPolarity) {
-        ESP_ERROR_CHECK(i2c_bitaxe_register_write_byte(emc2302_dev_handle, EMC2302_PWM_POLARITY, 0b00000011));
-    }
+    //if (invertPolarity) {
+    ESP_ERROR_CHECK(i2c_bitaxe_register_write_byte(emc2302_dev_handle, EMC2302_PWM_POLARITY, 0b00000011));
+    //}
 
     return ESP_OK;
 }
