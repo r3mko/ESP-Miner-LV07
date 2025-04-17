@@ -294,7 +294,7 @@ esp_err_t test_init_peripherals(GlobalState * GLOBAL_STATE) {
             EMC2101_set_beta_compensation(EMC2101_BETA_11);
             break;
         case DEVICE_LV07:
-            ESP_RETURN_ON_ERROR(EMC2302_init(nvs_config_get_u16(NVS_CONFIG_INVERT_FAN_POLARITY, 1)), TAG, "EMC2302 init failed!");
+            ESP_RETURN_ON_ERROR(EMC2302_init(), TAG, "EMC2302 init failed!");
             EMC2302_set_fan_speed(0, 1);
             EMC2302_set_fan_speed(1, 1);
             TMP1075_1_init();
