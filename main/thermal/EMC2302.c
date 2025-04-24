@@ -20,10 +20,7 @@ esp_err_t EMC2302_init() {
     // Fan config (default) before register write: 2B = 00101011
     ESP_ERROR_CHECK(i2c_bitaxe_register_write_byte(emc2302_dev_handle, EMC2302_FAN1_CONFIG1, 0b00001011));
     ESP_ERROR_CHECK(i2c_bitaxe_register_write_byte(emc2302_dev_handle, EMC2302_FAN2_CONFIG1, 0b00001011));
-
-    //if (invertPolarity) {
     ESP_ERROR_CHECK(i2c_bitaxe_register_write_byte(emc2302_dev_handle, EMC2302_PWM_POLARITY, 0b00000011));
-    //}
 
     return ESP_OK;
 }
