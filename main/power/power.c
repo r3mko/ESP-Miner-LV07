@@ -10,20 +10,20 @@
 
 #define SUPRA_POWER_OFFSET 5 // Watts
 #define GAMMA_POWER_OFFSET 5 // Watts
-#define GAMMATURBO_POWER_OFFSET 5 // Watts
+#define GAMMATURBO_POWER_OFFSET 10 // Watts
 #define LV07_POWER_OFFSET 7 // Watts
 
 // max power settings
-#define MAX_MAX_POWER 25 //watts
-#define ULTRA_MAX_POWER 25 //Watts
-#define SUPRA_MAX_POWER 40 //watts
-#define GAMMA_MAX_POWER 40 //Watts
-#define GAMMATURBO_MAX_POWER 60 //Watts
-#define LV07_MAX_POWER 60 //Watts
+#define MAX_MAX_POWER 25 // Watts
+#define ULTRA_MAX_POWER 25 // Watts
+#define SUPRA_MAX_POWER 40 // Watts
+#define GAMMA_MAX_POWER 40 // Watts
+#define GAMMATURBO_MAX_POWER 60 // Watts
+#define LV07_MAX_POWER 60 // Watts
 
 // nominal voltage settings
-#define NOMINAL_VOLTAGE_5 5 //volts
-#define NOMINAL_VOLTAGE_12 12 //volts
+#define NOMINAL_VOLTAGE_5 5 // Volts
+#define NOMINAL_VOLTAGE_12 12 // Volts
 
 esp_err_t Power_disable(GlobalState * GLOBAL_STATE) {
 
