@@ -131,16 +131,17 @@ static esp_err_t test_core_voltage(GlobalState * GLOBAL_STATE)
 
 esp_err_t test_display(GlobalState * GLOBAL_STATE) {
     // Display testing
-    if (display_init(GLOBAL_STATE) != ESP_OK) {
-        display_msg("DISPLAY:FAIL", GLOBAL_STATE);
-        return ESP_FAIL;
-    }
-    ESP_LOGI(TAG, "DISPLAY:%s", GLOBAL_STATE->SYSTEM_MODULE.is_screen_active ? "" : " (dummy)");
+    if (GLOBAL_STATE->DISPLAY_CONFIG.display != NONE) {
+        if (display_init(GLOBAL_STATE) != ESP_OK) {
+            display_msg("DISPLAY:FAIL", GLOBAL_STATE);
+            return ESP_FAIL;
+        }
 
-    if (GLOBAL_STATE->SYSTEM_MODULE.is_screen_active) {
-        ESP_LOGI(TAG, "DISPLAY init success!");
-    } else {
-        ESP_LOGW(TAG, "DISPLAY not found!");
+        if (GLOBAL_STATE->SYSTEM_MODULE.is_screen_active) {
+            ESP_LOGI(TAG, "DISPLAY init success!");
+        } else {
+            ESP_LOGW(TAG, "DISPLAY not found!");
+        }
     }
 
     return ESP_OK;
