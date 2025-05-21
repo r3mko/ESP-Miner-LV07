@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "esp_log.h"
+#include "esp_check.h"
 
 #include "i2c_bitaxe.h"
 #include "EMC2302.h"
@@ -50,7 +51,7 @@ uint16_t EMC2302_get_fan_speed(uint8_t devicenum) {
         return 0;
     }
 
-    err = (i2c_bitaxe_register_read(emc2302_dev_handle, TACH_MSB_REG, &tach_msb, 1);
+    err = i2c_bitaxe_register_read(emc2302_dev_handle, TACH_MSB_REG, &tach_msb, 1);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to read fan speed MSB: %s", esp_err_to_name(err));
         return 0;
