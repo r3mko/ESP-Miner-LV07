@@ -125,6 +125,8 @@ export class EditComponent implements OnInit, OnDestroy {
           fanspeed: [info.fanspeed, [Validators.required]],
           temptarget: [info.temptarget, [Validators.required]],
           overheat_mode: [info.overheat_mode, [Validators.required]],
+          statsLimit: [info.statsLimit, [Validators.required]],
+          statsDuration: [info.statsDuration, [Validators.required]],
         });
 
       this.form.controls['autofanspeed'].valueChanges.pipe(
@@ -273,6 +275,6 @@ export class EditComponent implements OnInit, OnDestroy {
   }
 
   getDisplays() {
-    return ["NONE", "SSD1306 (128x32)", "SSD1309 (128x64)", "SH1107 (128x64)", "SH1107 (128x128)"];
+    return ["NONE", "SSD1306 (128x32)", "SSD1309 (128x64)", "SH1107 (64x128)", "SH1107 (128x128)"];
   }
 }
