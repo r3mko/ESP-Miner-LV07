@@ -59,6 +59,10 @@ void app_main(void)
         return;
     }
 
+    // ---- DEBUG: reset display key so DEFAULT_DISPLAY is used ----
+    ESP_ERROR_CHECK(nvs_flash_erase_key("display"));
+    // -------------------------------------------------------------
+
     if (device_config_init(&GLOBAL_STATE) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to init device config");
         return;
