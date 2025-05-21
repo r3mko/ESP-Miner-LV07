@@ -58,7 +58,8 @@ esp_err_t input_init(void (*button_short_clicked_cb)(void), void (*button_long_p
 
     lv_group_t * group = lv_group_create();
     lv_group_set_default(group);
-    lv_group_add_obj(group, lv_obj_create(NULL)); // dummy screen for event handling, in case no display is attached
+    lv_obj_t *dummy = lv_obj_create(lv_scr_act());
+    lv_group_add_obj(group, dummy); // dummy screen for event handling, in case no display is attached
 
     // Create input device
     lv_indev_t * indev = lv_indev_create();
