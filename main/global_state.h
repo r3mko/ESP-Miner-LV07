@@ -83,7 +83,7 @@ typedef struct
 
     SystemModule SYSTEM_MODULE;
     DeviceConfig DEVICE_CONFIG;
-    DisplayConfig DISPLAY_CONFIG;
+//    DisplayConfig DISPLAY_CONFIG;
     AsicTaskModule ASIC_TASK_MODULE;
     PowerManagementModule POWER_MANAGEMENT_MODULE;
     SelfTestModule SELF_TEST_MODULE;
