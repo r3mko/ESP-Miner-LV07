@@ -90,6 +90,7 @@ esp_err_t display_init(void * pvParameters)
         .control_phase_bytes = 1,
         .lcd_cmd_bits = LCD_CMD_BITS,
         .lcd_param_bits = LCD_PARAM_BITS,
+        .dc_bit_offset = 6
     };
 
     switch (GLOBAL_STATE->DISPLAY_CONFIG.display) {
@@ -118,8 +119,9 @@ esp_err_t display_init(void * pvParameters)
         .height = GLOBAL_STATE->DISPLAY_CONFIG.h_res,
     };
     panel_config.vendor_config = &ssd1306_config;
+    ESP_RETURN_ON_ERROR(esp_lcd_new_panel_ssd1306(io_handle, &panel_config, &panel_handle), TAG, "No display found");
 
-    switch (GLOBAL_STATE->DISPLAY_CONFIG.display) {
+/*    switch (GLOBAL_STATE->DISPLAY_CONFIG.display) {
         case SSD1306:
         case SSD1309:
             esp_lcd_panel_ssd1306_config_t ssd1306_config = {
@@ -133,7 +135,7 @@ esp_err_t display_init(void * pvParameters)
             break;
         default:
             return ESP_FAIL;
-    }
+    } */
 
     ESP_RETURN_ON_ERROR(esp_lcd_panel_reset(panel_handle), TAG, "Panel reset failed");
     esp_err_t esp_lcd_panel_init_err = esp_lcd_panel_init(panel_handle);
