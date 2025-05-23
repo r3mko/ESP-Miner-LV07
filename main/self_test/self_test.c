@@ -286,42 +286,49 @@ void self_test(void * pvParameters)
     }
 
     //Run PSRAM test
+    ESP_LOGI(TAG, "PSRAM test");
     if(test_psram(GLOBAL_STATE) != ESP_OK) {
         ESP_LOGE(TAG, "NO PSRAM on device!");
         tests_done(GLOBAL_STATE, TESTS_FAILED);
     }
 
     //Run display tests
+    ESP_LOGI(TAG, "Display test");
     if (test_display(GLOBAL_STATE) != ESP_OK) {
         ESP_LOGE(TAG, "Display test failed!");
         tests_done(GLOBAL_STATE, TESTS_FAILED);
     }
 
     //Run input tests
+    ESP_LOGI(TAG, "Input test");
     if (test_input(GLOBAL_STATE) != ESP_OK) {
         ESP_LOGE(TAG, "Input test failed!");
         tests_done(GLOBAL_STATE, TESTS_FAILED);
     }
 
     //Run screen tests
+    ESP_LOGI(TAG, "Screen test");
     if (test_screen(GLOBAL_STATE) != ESP_OK) {
         ESP_LOGE(TAG, "Screen test failed!");
         tests_done(GLOBAL_STATE, TESTS_FAILED);
     }
 
     //Init peripherals EMC2101 and INA260 (if present)
+    ESP_LOGI(TAG, "Init peripherals test");
     if (test_init_peripherals(GLOBAL_STATE) != ESP_OK) {
         ESP_LOGE(TAG, "Peripherals init failed!");
         tests_done(GLOBAL_STATE, TESTS_FAILED);
     }
 
     //Voltage Regulator Testing
+    ESP_LOGI(TAG, "Voltage Regulator Test");
     if (test_voltage_regulator(GLOBAL_STATE) != ESP_OK) {
         ESP_LOGE(TAG, "Voltage Regulator test failed!");
         tests_done(GLOBAL_STATE, TESTS_FAILED);
     }
 
     //test for number of ASICs
+    ESP_LOGI(TAG, "Test for number of ASICs");
     if (SERIAL_init() != ESP_OK) {
         ESP_LOGE(TAG, "SERIAL init failed!");
         tests_done(GLOBAL_STATE, TESTS_FAILED);
