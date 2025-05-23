@@ -475,7 +475,7 @@ void screen_next()
         }
         // If the candidate screen is SCR_WIFI_RSSI AND this is NOT a bigger display,
         // then this screen should be skipped, and the loop will continue to find the next one.
-    } while (next_scr == SCR_WIFI_RSSI && GLOBAL_STATE->DISPLAY_CONFIG.v_res / 8 != 8);
+    } while (next_scr == SCR_WIFI_RSSI && 32 / 8 != 8);
 
     screen_show(next_scr);
 }
