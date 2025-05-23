@@ -114,6 +114,11 @@ esp_err_t display_init(void * pvParameters)
         .reset_gpio_num = -1,
     };
 
+    esp_lcd_panel_ssd1306_config_t ssd1306_config = {
+        .height = GLOBAL_STATE->DISPLAY_CONFIG.h_res,
+    };
+    panel_config.vendor_config = &ssd1306_config;
+
     switch (GLOBAL_STATE->DISPLAY_CONFIG.display) {
         case SSD1306:
         case SSD1309:
@@ -153,7 +158,7 @@ esp_err_t display_init(void * pvParameters)
         .hres = GLOBAL_STATE->DISPLAY_CONFIG.h_res,
         .vres = GLOBAL_STATE->DISPLAY_CONFIG.v_res,
         .monochrome = true,
-        .color_format = LV_COLOR_FORMAT_I1,
+        .color_format = LV_COLOR_FORMAT_RGB565,
         .rotation = {
             .swap_xy = false,
             .mirror_x = !flip_screen, // The screen is not flipped, this is for backwards compatibility
