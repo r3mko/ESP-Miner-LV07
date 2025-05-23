@@ -299,17 +299,17 @@ void self_test(void * pvParameters)
         tests_done(GLOBAL_STATE, TESTS_FAILED);
     }
 
-    //Run input tests
-    ESP_LOGI(TAG, "Input test");
-    if (test_input(GLOBAL_STATE) != ESP_OK) {
-        ESP_LOGE(TAG, "Input test failed!");
-        tests_done(GLOBAL_STATE, TESTS_FAILED);
-    }
-
     //Run screen tests
     ESP_LOGI(TAG, "Screen test");
     if (test_screen(GLOBAL_STATE) != ESP_OK) {
         ESP_LOGE(TAG, "Screen test failed!");
+        tests_done(GLOBAL_STATE, TESTS_FAILED);
+    }
+
+    //Run input tests
+    ESP_LOGI(TAG, "Input test");
+    if (test_input(GLOBAL_STATE) != ESP_OK) {
+        ESP_LOGE(TAG, "Input test failed!");
         tests_done(GLOBAL_STATE, TESTS_FAILED);
     }
 
