@@ -1,8 +1,6 @@
 #include "thermal.h"
 
-#define INTERNAL_OFFSET 5 //degrees C
-
-esp_err_t Thermal_init(DeviceConfig device_config) 
+esp_err_t Thermal_init(DeviceConfig device_config)
 {
     if (device_config.EMC2101) {
         esp_err_t res = EMC2101_init();
@@ -64,7 +62,7 @@ uint16_t Thermal_get_fan_speed(DeviceConfig device_config)
     return 0;
 }
 
-float Thermal_get_chip_temp(GlobalState * GLOBAL_STATE) 
+float Thermal_get_chip_temp(GlobalState * GLOBAL_STATE)
 {
     if (!GLOBAL_STATE->ASIC_initalized) {
         return -1;
@@ -72,16 +70,16 @@ float Thermal_get_chip_temp(GlobalState * GLOBAL_STATE)
 
     if (GLOBAL_STATE->DEVICE_CONFIG.EMC2101) {
         if (GLOBAL_STATE->DEVICE_CONFIG.emc_internal_temp) {
-            return EMC2101_get_internal_temp() + INTERNAL_OFFSET;
+            return EMC2101_get_internal_temp() + GLOBAL_STATE->DEVICE_CONFIG.temp_offset;
         } else {
             return EMC2101_get_external_temp();
         }
     }
     if (GLOBAL_STATE->DEVICE_CONFIG.EMC2103) {
-        return EMC2103_get_external_temp();
+        return EMC2103_get_external_temp() + GLOBAL_STATE->DEVICE_CONFIG.temp_offset;
     }
     if (GLOBAL_STATE->DEVICE_CONFIG.EMC2302) {
-        return (TMP1075_1_read_temperature() + TMP1075_2_read_temperature()) / 2 + INTERNAL_OFFSET;
+        return (TMP1075_1_read_temperature() + TMP1075_2_read_temperature()) / 2 + GLOBAL_STATE->DEVICE_CONFIG.temp_offset;
     }
     return -1;
 }
