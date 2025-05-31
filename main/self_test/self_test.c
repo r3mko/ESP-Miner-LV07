@@ -53,7 +53,8 @@
 static const char * TAG = "self_test";
 
 SemaphoreHandle_t BootSemaphore;
-tmp1075_t sensor_A, sensor_B;
+
+extern tmp1075_t sensor_A, sensor_B;
 
 //local function prototypes
 static void tests_done(GlobalState * GLOBAL_STATE, bool test_result);
