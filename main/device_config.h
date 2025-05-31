@@ -50,6 +50,8 @@ typedef struct {
     bool emc_internal_temp : 1;
     uint8_t emc_ideality_factor;
     uint8_t emc_beta_compensation;
+    unit8_t TMP1075_A;
+    unit8_t TMP1075_B;
     int8_t emc_temp_offset;
     bool DS4432U : 1;
     bool INA260  : 1;
@@ -90,7 +92,7 @@ static const DeviceConfig default_configs[] = {
     { .board_version = "203",  .family = FAMILY_ULTRA,       .EMC2101 = true, .emc_internal_temp = true,                                  .emc_temp_offset = 5,   .DS4432U = true, .INA260 = true, .plug_sense = true, .asic_enable = true, .power_consumption_target = 12, },
     { .board_version = "204",  .family = FAMILY_ULTRA,       .EMC2101 = true, .emc_internal_temp = true,                                  .emc_temp_offset = 5,   .DS4432U = true, .INA260 = true, .plug_sense = true,                      .power_consumption_target = 12, },
     { .board_version = "205",  .family = FAMILY_ULTRA,       .EMC2101 = true, .emc_internal_temp = true,                                  .emc_temp_offset = 5,   .DS4432U = true, .INA260 = true, .plug_sense = true, .asic_enable = true, .power_consumption_target = 12, },
-    { .board_version = "302",  .family = FAMILY_LV07,        .EMC2302 = true,                                                             .emc_temp_offset = 5,   .TPS546 = true,                                                           .power_consumption_target = 22, },
+    { .board_version = "302",  .family = FAMILY_LV07,        .EMC2302 = true, .TMP1075_A = 0x4A, .TMP1075_B = 0x4B,                       .emc_temp_offset = 5,   .TPS546 = true,                                                           .power_consumption_target = 22, },
     { .board_version = "400",  .family = FAMILY_SUPRA,       .EMC2101 = true, .emc_internal_temp = true,                                  .emc_temp_offset = 5,   .DS4432U = true, .INA260 = true, .plug_sense = true, .asic_enable = true, .power_consumption_target = 12, },
     { .board_version = "401",  .family = FAMILY_SUPRA,       .EMC2101 = true, .emc_internal_temp = true,                                  .emc_temp_offset = 5,   .DS4432U = true, .INA260 = true, .plug_sense = true, .asic_enable = true, .power_consumption_target = 12, },
     { .board_version = "402",  .family = FAMILY_SUPRA,       .EMC2101 = true,                                                                                     .TPS546 = true,                                                           .power_consumption_target = 8,  },

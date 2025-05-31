@@ -22,8 +22,7 @@
 #include "vcore.h"
 #include "utils.h"
 #include "TPS546.h"
-#include "TMP1075_1.h"
-#include "TMP1075_2.h"
+#include "TMP1075_LV07.h"
 #include "esp_psram.h"
 #include "power.h"
 #include "thermal.h"
@@ -54,6 +53,7 @@
 static const char * TAG = "self_test";
 
 SemaphoreHandle_t BootSemaphore;
+tmp1075_t sensor_A, sensor_B;
 
 //local function prototypes
 static void tests_done(GlobalState * GLOBAL_STATE, bool test_result);
@@ -234,8 +234,8 @@ esp_err_t test_init_peripherals(GlobalState * GLOBAL_STATE) {
         ESP_RETURN_ON_ERROR(EMC2302_init(), TAG, "EMC2302 init failed!");
         EMC2302_set_fan_speed(0, 1);
         EMC2302_set_fan_speed(1, 1);
-        TMP1075_1_init();
-        TMP1075_2_init();
+        TMP1075_LV07_init(&sensor_A, GLOBAL_STATE->DEVICE_CONFIG.TMP1075_A, "TMP1075_A");
+        TMP1075_LV07_init(&sensor_B, GLOBAL_STATE->DEVICE_CONFIG.TMP1075_B, "TMP1075_B");
     }
 
     if (GLOBAL_STATE->DEVICE_CONFIG.INA260) {
