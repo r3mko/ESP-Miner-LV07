@@ -10,7 +10,7 @@
  * @return esp_err_t ESP_OK on success, or an error code on failure.
  */
 esp_err_t TMP1075_LV07_init(tmp1075_t *sensor, uint8_t i2c_address, const char *TAG) {
-    if (sensor == NULL || log_tag == NULL) {
+    if (sensor == NULL || TAG == NULL) {
         ESP_LOGE(TAG, "Empty sensor or tag");
         return ESP_FAIL;
     }
@@ -18,7 +18,7 @@ esp_err_t TMP1075_LV07_init(tmp1075_t *sensor, uint8_t i2c_address, const char *
     sensor->i2c_address = i2c_address;
     sensor->TAG         = TAG;
 
-    ESP_LOGI(sensor->log_tag, "Initializing TMP1075 at 0x%02X", i2c_address);
+    ESP_LOGI(sensor->TAG, "Initializing TMP1075 at 0x%02X", i2c_address);
 
     if (i2c_bitaxe_add_device(i2c_address, &sensor->dev_handle, sensor->TAG) != ESP_OK) {
         ESP_LOGE(sensor->TAG, "Failed to add device");
