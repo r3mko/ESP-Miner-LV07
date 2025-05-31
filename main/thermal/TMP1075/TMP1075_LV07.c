@@ -34,7 +34,7 @@ float TMP1075_LV07_read_temperature(tmp1075_t *sensor) {
 
     if (sensor == NULL) {
         ESP_LOGE("TMP1075", "NULL pointer in sensor");
-        return NAN;
+        return ESP_FAIL;
     }
 
     err = i2c_bitaxe_register_read(sensor->dev_handle, TMP1075_LV07_TEMP_REG, data, 2);
