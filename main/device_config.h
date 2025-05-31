@@ -50,8 +50,8 @@ typedef struct {
     bool emc_internal_temp : 1;
     uint8_t emc_ideality_factor;
     uint8_t emc_beta_compensation;
-    unit8_t TMP1075_A;
-    unit8_t TMP1075_B;
+    uint8_t TMP1075_A;
+    uint8_t TMP1075_B;
     int8_t emc_temp_offset;
     bool DS4432U : 1;
     bool INA260  : 1;
