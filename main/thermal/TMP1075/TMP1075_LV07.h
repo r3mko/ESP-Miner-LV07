@@ -12,7 +12,6 @@
 
 typedef struct {
     i2c_master_dev_handle_t dev_handle;
-    uint8_t                 i2c_address;
     const char             *TAG;
 } tmp1075_t;
 
