@@ -129,8 +129,8 @@ int16_t VCORE_get_voltage_mv(GlobalState * GLOBAL_STATE)
     // TODO: What about hex?
     if (strcmp(GLOBAL_STATE->DEVICE_CONFIG.family.name, "LV07") == 0) {
         return TPS546_get_vout() * 1000;
-    } else {
-        return ADC_get_vcore();
+    }
+    return ADC_get_vcore();
     }
 }
 
