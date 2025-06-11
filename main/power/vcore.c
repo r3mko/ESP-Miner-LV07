@@ -131,7 +131,6 @@ int16_t VCORE_get_voltage_mv(GlobalState * GLOBAL_STATE)
         return TPS546_get_vout() * 1000;
     }
     return ADC_get_vcore();
-    }
 }
 
 esp_err_t VCORE_check_fault(GlobalState * GLOBAL_STATE) 
