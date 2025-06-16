@@ -60,7 +60,12 @@ extern tmp1075_t sensor_A, sensor_B;
 //local function prototypes
 static void tests_done(GlobalState * GLOBAL_STATE, bool test_result);
 
-bool should_test(GlobalState * GLOBAL_STATE) {
+static bool should_test(GlobalState * GLOBAL_STATE) {
+    // Optionally hold the boot button
+    if (gpio_get_level(CONFIG_GPIO_BUTTON_BOOT) == 0) { // LOW when pressed
+        return true;
+    }
+
     bool is_max = GLOBAL_STATE->DEVICE_CONFIG.family.asic.model == BM1397;
     uint64_t best_diff = nvs_config_get_u64(NVS_CONFIG_BEST_DIFF, 0);
     uint16_t should_self_test = nvs_config_get_u16(NVS_CONFIG_SELF_TEST, 0);
@@ -264,10 +269,14 @@ esp_err_t test_psram(GlobalState * GLOBAL_STATE){
  * diagnostic tests to ensure the system is functioning correctly.
  *
  * @param pvParameters Pointer to the parameters passed to the task (if any).
+ * @return true if the self-test was run, false if it was skipped.
  */
-void self_test(void * pvParameters)
+bool self_test(void * pvParameters)
 {
     GlobalState * GLOBAL_STATE = (GlobalState *) pvParameters;
+
+    // Should we run the self test?
+    if (!should_test(GLOBAL_STATE)) return false;
 
     ESP_LOGI(TAG, "Running Self Tests");
 
@@ -280,7 +289,7 @@ void self_test(void * pvParameters)
 
     if (BootSemaphore == NULL) {
         ESP_LOGE(TAG, "Failed to create semaphore");
-        return;
+        return true;
     }
 
     //Run PSRAM test
@@ -322,7 +331,6 @@ void self_test(void * pvParameters)
     if (asic_reset() != ESP_OK) {
         ESP_LOGE(TAG, "ASIC reset failed!");
         tests_done(GLOBAL_STATE, TESTS_FAILED);
-        return;
     }
 
     //test for number of ASICs
@@ -483,7 +491,7 @@ void self_test(void * pvParameters)
 
     tests_done(GLOBAL_STATE, TESTS_PASSED);
 
-    return;  
+    return true;
 }
 
 static void tests_done(GlobalState * GLOBAL_STATE, bool test_result) 
