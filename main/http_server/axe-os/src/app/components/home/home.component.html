@@ -155,14 +155,13 @@
                         Input Voltage<span>{{info.voltage}} V</span>
                     </h6>
                     <div class="relative">
-                        <!-- <p-progressBar [value]="(info.voltage / (info.nominalVoltage + .5)) * 100"
-                            [styleClass]="'p-progressbar--thin'"> -->
+                        <!-- [value]="(info.voltage / (info.nominalVoltage + .5)) * 100" -->
                         <p-progressBar [value]="((info.voltage - (info.nominalVoltage / 2)) / ((info.nominalVoltage / 2) + 1.5)) * 100"
                             [styleClass]="'p-progressbar--thin'">
                             <ng-template pTemplate="content" let-value></ng-template>
                         </p-progressBar>
 
-                        <!-- Conditional marker based on nominal voltage-->
+                        <!-- Conditional marker based on nominal voltage -->
                         <!-- [style.left]="(info.nominalVoltage / (info.nominalVoltage + .5)) * 100 + '%'" -->
                         <div class="absolute bg-white h-full top-0"
                             [style.left]="((info.nominalVoltage / 2) / ((info.nominalVoltage / 2) + 1.5)) * 100 + '%'"
@@ -173,7 +172,7 @@
                             </small>
                         </div>
                     </div>
-                    <!-- <strong class="text-red-500" *ngIf="info.voltage < (info.nominalVoltage + .5) * 0.87"> -->
+                    <!-- *ngIf="info.voltage < (info.nominalVoltage + .5) * 0.87"> -->
                     <!-- 5V => 4.8 and 12V => 11.5 -->
                     <strong class="text-red-500" *ngIf="info.voltage < ((67 * info.nominalVoltage + 1) / 70)">
                         Danger: Low Voltage
