@@ -132,6 +132,7 @@ components:
         - temp
         - uptimeSeconds
         - version
+        - axeOSVersion
         - voltage
         - vrTemp
         - wifiStatus
@@ -276,6 +277,9 @@ components:
         version:
           type: string
           description: Firmware version
+        axeOSVersion:
+          type: string
+          description: AxeOS version
         voltage:
           type: number
           description: Input voltage
@@ -505,7 +509,8 @@ paths:
                 type: object
                 required:
                   - ASICModel
-                  - boardFamily
+                  - swarmColor
+                  - familyName
                   - defaultFrequency
                   - frequencyOptions
                   - defaultVoltage
@@ -521,11 +526,16 @@ paths:
                       - BM1397
                     examples:
                       - "BM1366"
-                  boardFamily:
+                  familyName:
                     type: string
                     description: Board family name
                     examples:
                       - "Ultra"
+                  swarmColor:
+                    type: string
+                    description: Swarm color
+                    examples:
+                      - "purple"
                   defaultFrequency:
                     type: number
                     description: Default frequency for the ASIC model in MHz
