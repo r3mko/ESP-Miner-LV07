@@ -7,10 +7,14 @@ stratumurl,data,string,public-pool.io
 stratumport,data,u16,21496
 stratumuser,data,string,
 stratumpass,data,string,x
+stratumdiff,data,u16,1000
+stratumxnsub,data,u16,0
 fbstratumurl,data,string,eusolo.ckpool.org
 fbstratumport,data,u16,3333
 fbstratumuser,data,string,
 fbstratumpass,data,string,x
+fbstratumdiff,data,u16,1000
+fbstratumxnsum,data,u16,0
 asicfrequency,data,u16,485
 asicvoltage,data,u16,1200
 asicmodel,data,string,BM1366
