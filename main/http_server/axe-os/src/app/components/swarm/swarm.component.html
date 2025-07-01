@@ -96,6 +96,10 @@
                     label: 'Temp'
                 },
                 {
+                    name: 'poolDifficulty',
+                    label: 'Pool Diff'
+                },
+                {
                     name: 'version',
                     label: 'Version'
                 },
@@ -120,7 +124,7 @@
                        [ngClass]="'text-'+axe.swarmColor+'-500'"
                        [href]="'http://'+axe.IP"
                        target="_blank"
-                       [pTooltip]="axe.familyName"
+                       [pTooltip]="axe.deviceModel || 'Other'"
                        tooltipPosition="top">{{axe.IP}}</a>
                 </td>
                 <td>{{axe.hostname}}</td>
@@ -166,6 +170,7 @@
                         {{axe.vrTemp | number: '1.0-1'}}°<small>C</small>
                     </div>
                 </td>
+                <td>{{axe.poolDifficulty || axe.stratumDiff}}</td>
                 <td>{{axe.version}}</td>
                 <td><p-button icon="pi pi-pencil" pp-button (click)="edit(axe)"></p-button></td>
                 <td><p-button icon="pi pi-sync" pp-button severity="danger" (click)="restart(axe)"></p-button></td>
@@ -177,7 +182,7 @@
     <div class="flex flex-wrap gap-2 mt-3 text-sm justify-content-center">
         <div *ngFor="let item of getFamilies" class="flex align-items-center gap-1">
             <span [class]="'text-' + item.swarmColor + '-500'">●</span>
-            <span>{{ item.familyName || 'Other' }} ({{item.ASICModel}})</span>
+            <span>{{ item.deviceModel || 'Other' }} ({{item.asicCount > 1 ? item.asicCount + 'x ' : ''}}{{item.ASICModel}})</span>
         </div>
     </div>
 

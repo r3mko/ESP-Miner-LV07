@@ -89,7 +89,6 @@ components:
       required:
         - ASICModel
         - apEnabled
-        - asicCount
         - autofanspeed
         - bestDiff
         - bestSessionDiff
@@ -120,14 +119,15 @@ components:
         - nominalVoltage
         - overheat_mode
         - overclockEnabled
+        - poolDifficulty
         - power
+        - power_fault
         - runningPartition
         - sharesAccepted
         - sharesRejected
         - sharesRejectedReasons
         - smallCoreCount
         - ssid
-        - stratumDifficulty
         - stratumExtranonceSubscribe
         - stratumPort
         - stratumSuggestedDifficulty
@@ -150,9 +150,6 @@ components:
         apEnabled:
           type: number
           description: Whether AP mode is enabled (0=no, 1=yes)
-        asicCount:
-          type: number
-          description: Number of ASICs detected
         autofanspeed:
           type: number
           description: Automatic fan speed control (0=manual, 1=auto)
@@ -240,6 +237,9 @@ components:
         overclockEnabled:
           type: integer
           description: Set custom voltage/frequency in AxeOS
+        poolDifficulty:
+          type: number
+          description: Current pool difficulty
         power:
           type: number
           description: Power consumption in watts
@@ -266,9 +266,6 @@ components:
         ssid:
           type: string
           description: Connected WiFi network SSID
-        stratumDifficulty:
-          type: number
-          description: Current stratum difficulty
         stratumExtranonceSubscribe:
           type: boolean
           description: Enable pool extranonce subscription
@@ -526,7 +523,8 @@ paths:
                 required:
                   - ASICModel
                   - swarmColor
-                  - familyName
+                  - asicCount
+                  - deviceModel
                   - defaultFrequency
                   - frequencyOptions
                   - defaultVoltage
@@ -542,9 +540,9 @@ paths:
                       - BM1397
                     examples:
                       - "BM1366"
-                  familyName:
+                  deviceModel:
                     type: string
-                    description: Board family name
+                    description: Device model name
                     examples:
                       - "Ultra"
                   swarmColor:
@@ -552,6 +550,9 @@ paths:
                     description: Swarm color
                     examples:
                       - "purple"
+                  asicCount:
+                    type: number
+                    description: Number of ASICs detected
                   defaultFrequency:
                     type: number
                     description: Default frequency for the ASIC model in MHz

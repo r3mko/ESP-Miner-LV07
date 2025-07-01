@@ -1,7 +1,8 @@
 export interface ISystemASIC {
   ASICModel: string;
-  familyName: string;
+  deviceModel: string;
   swarmColor: string;
+  asicCount: number;
   defaultFrequency: number;
   frequencyOptions: number[];
   defaultVoltage: number;
