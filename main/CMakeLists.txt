@@ -26,7 +26,7 @@ SRCS
     "./thermal/EMC2101.c"
     "./thermal/EMC2103.c"
     "./thermal/EMC2302.c"
-    "./thermal/TMP1075/TMP1075_LV07.c"
+    "./thermal/TMP1075_LV07.c"
     "./thermal/thermal.c"
     "./thermal/PID.c"
     "./power/TPS546.c"
@@ -47,7 +47,6 @@ INCLUDE_DIRS
     "../components/dns_server/include"
     "../components/stratum/include"
     "thermal"
-    "thermal/TMP1075"
     "power"
 
 PRIV_REQUIRES
