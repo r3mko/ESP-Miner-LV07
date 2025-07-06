@@ -20,8 +20,6 @@ export class QuicklinkService {
             return `https://web.public-pool.io/#/app/${address}`;
         } else if (stratumURL.includes('ocean.xyz')) {
             return `https://ocean.xyz/stats/${address}`;
-        } else if (stratumURL.includes('solo.d-central.tech')) {
-            return `https://solo.d-central.tech/#/app/${address}`;
         } else if (/^eusolo[46]?.ckpool.org/.test(stratumURL)) {
             return `https://eusolostats.ckpool.org/users/${address}`;
         } else if (/^solo[46]?.ckpool.org/.test(stratumURL)) {
@@ -36,6 +34,8 @@ export class QuicklinkService {
             return `https://pool.nerdminer.de/#/app/${address}`;
         } else if (stratumURL.includes('solomining.de')) {
             return `https://pool.solomining.de/#/app/${address}`;
+        } else if (stratumURL.includes('yourdevice.ch')) {
+            return `https://blitzpool.yourdevice.ch/#/app/${address}`;
         } else if (stratumURL.includes('solo.stratum.braiins.com')) {
             return `https://solo.braiins.com/stats/${address}`;
         } else if (stratumURL.includes('parasite.wtf')) {
