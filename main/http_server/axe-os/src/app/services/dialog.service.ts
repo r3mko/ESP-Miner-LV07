@@ -47,15 +47,7 @@ export class DialogService {
         pTooltip="{{option.label}} ({{option.rssi}}dBm)"
         tooltipPosition="bottom"
       >
-        <figure class="wifi-icon flex-order-2"
-          [ngClass]="{
-            'wifi-icon--excellent': option.rssi > -50,
-            'wifi-icon--good': option.rssi <= -50 && option.rssi > -60,
-            'wifi-icon--fair': option.rssi <= -60 && option.rssi > -70,
-            'wifi-icon--weak': option.rssi <= -70
-          }">
-          <i *ngFor="let item of [1,2,3,4]"></i>
-        </figure>
+        <wifi-icon [rssi]="option.rssi" class="flex-order-2" />
       </p-button>
     </div>
   `

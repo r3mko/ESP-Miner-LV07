@@ -6,7 +6,10 @@ import { map, Observable, shareReplay, startWith } from 'rxjs';
 import { GithubUpdateService } from 'src/app/services/github-update.service';
 import { LoadingService } from 'src/app/services/loading.service';
 import { SystemService } from 'src/app/services/system.service';
+import { LocalStorageService } from 'src/app/local-storage.service';
 import { ModalComponent } from '../modal/modal.component';
+
+const IGNORE_RELEASE_CHECK_WARNING = 'IGNORE_RELEASE_CHECK_WARNING';
 
 @Component({
   selector: 'app-update',
@@ -32,7 +35,8 @@ export class UpdateComponent {
     private systemService: SystemService,
     private toastrService: ToastrService,
     private loadingService: LoadingService,
-    private githubUpdateService: GithubUpdateService
+    private githubUpdateService: GithubUpdateService,
+    private localStorageService: LocalStorageService,
   ) {
     this.latestRelease$ = this.githubUpdateService.getReleases().pipe(map(releases => {
       return releases[0];
@@ -46,7 +50,7 @@ export class UpdateComponent {
     this.firmwareUpload.clear(); // clear the file upload component
 
     if (file.name != 'esp-miner.bin') {
-      this.toastrService.error('Incorrect file, looking for esp-miner.bin.', 'Error');
+      this.toastrService.error('Incorrect file, looking for esp-miner.bin.');
       return;
     }
 
@@ -58,19 +62,19 @@ export class UpdateComponent {
             this.firmwareUpdateProgress = Math.round((event.loaded / (event.total as number)) * 100);
           } else if (event.type === HttpEventType.Response) {
             if (event.ok) {
-              this.toastrService.success('Firmware updated. Device has been successfully restarted.', 'Success!');
+              this.toastrService.success('Firmware updated. Device has been successfully restarted.');
 
             } else {
-              this.toastrService.error(event.statusText, 'Error');
+              this.toastrService.error(event.statusText);
             }
           }
           else if (event instanceof HttpErrorResponse)
           {
-            this.toastrService.error(event.error, 'Error');
+            this.toastrService.error(event.error);
           }
         },
         error: (err) => {
-          this.toastrService.error(err.error, 'Error');
+          this.toastrService.error(err.error);
         },
         complete: () => {
           this.firmwareUpdateProgress = null;
@@ -83,7 +87,7 @@ export class UpdateComponent {
     this.websiteUpload.clear(); // clear the file upload component
 
     if (file.name != 'www.bin') {
-      this.toastrService.error('Incorrect file, looking for www.bin.', 'Error');
+      this.toastrService.error('Incorrect file, looking for www.bin.');
       return;
     }
 
@@ -96,23 +100,23 @@ export class UpdateComponent {
             this.websiteUpdateProgress = Math.round((event.loaded / (event.total as number)) * 100);
           } else if (event.type === HttpEventType.Response) {
             if (event.ok) {
-              this.toastrService.success('AxeOS updated. The page will reload in a few seconds.', 'Success!');
+              this.toastrService.success('AxeOS updated. The page will reload in a few seconds.');
               setTimeout(() => {
                 window.location.reload();
               }, 2000);
             } else {
-              this.toastrService.error(event.statusText, 'Error');
+              this.toastrService.error(event.statusText);
             }
           }
           else if (event instanceof HttpErrorResponse)
           {
             const errorMessage = event.error?.message || event.message || 'Unknown error occurred';
-            this.toastrService.error(errorMessage, 'Error');
+            this.toastrService.error(errorMessage);
           }
         },
         error: (err) => {
           const errorMessage = err.error?.message || err.message || 'Unknown error occurred';
-          this.toastrService.error(errorMessage, 'Error');
+          this.toastrService.error(errorMessage);
         },
         complete: () => {
           this.websiteUpdateProgress = null;
@@ -134,5 +138,24 @@ export class UpdateComponent {
       .replace(/\r\n\r\n/gim, '<br>'); // Breaks
 
     return toHTML.trim();
+  }
+
+  public handleReleaseCheck(): void {
+    if (this.localStorageService.getBool(IGNORE_RELEASE_CHECK_WARNING)) {
+      this.checkLatestRelease = true;
+    } else {
+      this.modalComponent.isVisible = true;
+    }
+  }
+
+  public continueReleaseCheck(skipWarning: boolean): void {
+    this.checkLatestRelease = true;
+    this.modalComponent.isVisible = false;
+
+    if (!skipWarning) {
+      return;
+    }
+
+    this.localStorageService.setBool(IGNORE_RELEASE_CHECK_WARNING, true);
   }
 }

@@ -14,7 +14,7 @@
 @import "app/layout/styles/theme/themes/vela/bitaxe/theme.scss";
 
 @import "app/layout/styles/modules/primeicons.css";
-@import "../node_modules/primeng/resources/primeng.min.css";
+@import "app/layout/styles/modules/primeng.min.css";
 
 @import "../node_modules/primeflex/primeflex.min.css";
 
@@ -56,7 +56,7 @@ p-chart>div {
     }
 }
 
-.p-button {
+.p-button:not(.p-button-secondary) {
     background: var(--button-bg);
     border: 1px solid var(--button-bg);
 
