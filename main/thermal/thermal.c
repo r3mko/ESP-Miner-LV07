@@ -113,6 +113,12 @@ thermal_temps_t Thermal_get_chip_temps(GlobalState * GLOBAL_STATE)
         temps.temp1 = raw_temps.temp1 + temp_offset;
         temps.temp2 = raw_temps.temp2 + temp_offset;
     }
+    if (GLOBAL_STATE->DEVICE_CONFIG.EMC2302) {
+        float tA = TMP1075_LV07_read_temperature(&sensor_A);
+        float tB = TMP1075_LV07_read_temperature(&sensor_B);
+        temps.temp1 = tA + temp_offset;
+        temps.temp2 = tB + temp_offset;
+    }
     
     return temps;
 }
@@ -126,8 +132,8 @@ void Thermal_get_temperatures(GlobalState * GLOBAL_STATE, float * temp1, float *
     // Get primary temperature (works for both EMC2101 and EMC2103)
     *temp1 = Thermal_get_chip_temp(GLOBAL_STATE);
     
-    // Only get second temperature for EMC2103 devices (GAMMA_TURBO)
-    if (GLOBAL_STATE->DEVICE_CONFIG.EMC2103) {
+    // Only get second temperature for EMC2103 devices (GAMMA_TURBO) and EMC2302 devices (LV07)
+    if (GLOBAL_STATE->DEVICE_CONFIG.EMC2103 || GLOBAL_STATE->DEVICE_CONFIG.EMC2302) {
         thermal_temps_t temps = Thermal_get_chip_temps(GLOBAL_STATE);
         *temp1 = temps.temp1;
         *temp2 = temps.temp2;
@@ -138,5 +144,5 @@ void Thermal_get_temperatures(GlobalState * GLOBAL_STATE, float * temp1, float *
 
 bool Thermal_has_dual_sensors(DeviceConfig * DEVICE_CONFIG)
 {
-    return DEVICE_CONFIG->EMC2103;
+    return DEVICE_CONFIG->EMC2103 || GLOBAL_STATE->DEVICE_CONFIG.EMC2302;
 }

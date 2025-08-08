@@ -122,7 +122,7 @@ void POWER_MANAGEMENT_task(void * pvParameters)
         }
         
         if ((power_management->vr_temp > TPS546_THROTTLE_TEMP || asic_overheat) && (power_management->frequency_value > 50 || power_management->voltage > 1000)) {
-            if (GLOBAL_STATE->DEVICE_CONFIG.EMC2103) {
+            if (GLOBAL_STATE->DEVICE_CONFIG.EMC2103 || GLOBAL_STATE->DEVICE_CONFIG.EMC2302) {
                 ESP_LOGE(TAG, "OVERHEAT! VR: %fC ASIC1: %fC ASIC2: %fC", power_management->vr_temp, power_management->chip_temp_avg, power_management->chip_temp2_avg);
             } else {
                 ESP_LOGE(TAG, "OVERHEAT! VR: %fC ASIC: %fC", power_management->vr_temp, power_management->chip_temp_avg);
