@@ -116,8 +116,8 @@ void POWER_MANAGEMENT_task(void * pvParameters)
         //overheat mode if the voltage regulator or ASIC is too hot
         bool asic_overheat = power_management->chip_temp_avg > THROTTLE_TEMP;
         
-        // For EMC2103 devices, check second chip temperature
-        if (GLOBAL_STATE->DEVICE_CONFIG.EMC2103) {
+        // For EMC2103/EMC2302 devices, check second chip temperature
+        if (GLOBAL_STATE->DEVICE_CONFIG.EMC2103 || GLOBAL_STATE->DEVICE_CONFIG.EMC2302) {
             asic_overheat = asic_overheat || (power_management->chip_temp2_avg > THROTTLE_TEMP);
         }
         
