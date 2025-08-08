@@ -144,5 +144,5 @@ void Thermal_get_temperatures(GlobalState * GLOBAL_STATE, float * temp1, float *
 
 bool Thermal_has_dual_sensors(DeviceConfig * DEVICE_CONFIG)
 {
-    return DEVICE_CONFIG->EMC2103 || DEVICE_CONFIG.EMC2302;
+    return DEVICE_CONFIG->EMC2103 || DEVICE_CONFIG->EMC2302;
 }
