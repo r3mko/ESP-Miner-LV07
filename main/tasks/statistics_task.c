@@ -133,7 +133,11 @@ void statistics_task(void * pvParameters)
 
                 statsData.timestamp = currentTime;
                 statsData.hashrate = sys_module->current_hashrate;
-                statsData.chipTemperature = power_management->chip_temp_avg;
+                if (power_management->chip_temp2_avg > 0) {
+                    statsData.chipTemperature = (power_management->chip_temp_avg + power_management->chip_temp2_avg) / 2.0; // TODO: Or max of both?
+                } else {
+                    statsData.chipTemperature = power_management->chip_temp_avg;
+                }
                 statsData.vrTemperature = power_management->vr_temp;
                 statsData.power = power_management->power;
                 statsData.voltage = power_management->voltage;
