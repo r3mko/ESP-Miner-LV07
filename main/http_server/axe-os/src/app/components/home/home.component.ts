@@ -130,7 +130,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         },
         {
           type: 'line',
-          label: 'ASIC Temp',
+          label: 'ASIC Temp (Average)',
           data: [this.temperatureData],
           fill: false,
           backgroundColor: textColorSecondary,
@@ -258,7 +258,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         if (!info.power_fault) {
           this.hashrateData.push(info.hashRate * 1000000000);
           if (info.temp2 > 0) {
-            this.temperatureData.push((info.temp + info.temp2) / 2); // TODO: Or max of both?
+            this.temperatureData.push(parseFloat(((info.temp + info.temp2) / 2).toFixed(1))); // TODO: Or max of both?
           } else {
             this.temperatureData.push(info.temp);
           }
