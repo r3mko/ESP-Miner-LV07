@@ -160,7 +160,7 @@ export class HomeComponent implements OnInit, OnDestroy {
               if (label) {
                 label += ': ';
               }
-              if (tooltipItem.dataset.label === 'ASIC Temp') {
+              if (tooltipItem.dataset.label === 'ASIC Temp (Average)') {
                 label += tooltipItem.raw + ' °C';
               } else {
                 label += HashSuffixPipe.transform(tooltipItem.raw);
