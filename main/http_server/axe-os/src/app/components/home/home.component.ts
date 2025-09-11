@@ -257,7 +257,11 @@ export class HomeComponent implements OnInit, OnDestroy {
         // Only collect and update chart data if there's no power fault
         if (!info.power_fault) {
           this.hashrateData.push(info.hashRate * 1000000000);
-          this.temperatureData.push(info.temp);
+          if (info.temp2 > 0) {
+            this.temperatureData.push((info.temp + info.temp2) / 2); // TODO: Or max of both?
+          } else {
+            this.temperatureData.push(info.temp);
+          }
           this.powerData.push(info.power);
           this.dataLabel.push(new Date().getTime());
 
