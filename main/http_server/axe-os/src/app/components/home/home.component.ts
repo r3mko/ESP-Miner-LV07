@@ -230,7 +230,7 @@ export class HomeComponent implements OnInit, OnDestroy {
           const idxTimestamp = 3;
 
           this.hashrateData.push(element[idxHashrate] * 1000000000);
-          this.temperatureData.push(element[idxTemperature]);
+          this.temperatureData.push(parseFloat(element[idxTemperature].toFixed(1)));
           this.powerData.push(element[idxPower]);
           this.dataLabel.push(new Date().getTime() - stats.currentTimestamp + element[idxTimestamp]);
 
