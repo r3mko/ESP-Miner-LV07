@@ -490,6 +490,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     switch (label) {
       case eChartLabel.hashrate:    return info.expectedHashrate;
       case eChartLabel.asicTemp:    return this.maxTemp;
+      case eChartLabel.asicTemp1:   return this.maxTemp;
+      case eChartLabel.asicTemp2:   return this.maxTemp;
       case eChartLabel.vrTemp:      return this.maxTemp + 25;
       case eChartLabel.asicVoltage: return info.coreVoltage;
       case eChartLabel.voltage:     return (info.nominalVoltage + .5);
@@ -507,6 +509,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     switch (label) {
       case eChartLabel.hashrate:    return info.hashRate;
       case eChartLabel.asicTemp:    return info.temp2 > 0 ? (info.temp + info.temp2) / 2 : info.temp; // TODO: Or max of both?
+      case eChartLabel.asicTemp1:   return info.temp;
+      case eChartLabel.asicTemp2:   return info.temp2;
       case eChartLabel.vrTemp:      return info.vrTemp;
       case eChartLabel.asicVoltage: return info.coreVoltageActual;
       case eChartLabel.voltage:     return info.voltage;
@@ -524,6 +528,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     switch (label) {
       case eChartLabel.hashrate:    return {suffix: ' H/s', precision: 0};
       case eChartLabel.asicTemp:    return {suffix: ' °C', precision: 1};
+      case eChartLabel.asicTemp1:   return {suffix: ' °C', precision: 1};
+      case eChartLabel.asicTemp2:   return {suffix: ' °C', precision: 1};
       case eChartLabel.vrTemp:      return {suffix: ' °C', precision: 1};
       case eChartLabel.asicVoltage: return {suffix: ' V', precision: 3};
       case eChartLabel.voltage:     return {suffix: ' V', precision: 1};
@@ -549,7 +555,16 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   dataSourceLabels(info: ISystemInfo) {
     return Object.entries(eChartLabel)
-      .filter(([key, ]) => key !== 'vrTemp' || info.vrTemp)
+      .filter(([key]) => {
+        if (key === 'vrTemp' && !info.vrTemp) {
+          return false;
+        }
+        if ((key === 'asicTemp1' || key === 'asicTemp2') && !info.temp2) {
+          return false;
+        }
+
+        return true;
+      })
       .map(([key, value]) => ({name: value, value: key}));
   }
 }

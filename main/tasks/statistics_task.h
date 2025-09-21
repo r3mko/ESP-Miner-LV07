@@ -9,6 +9,8 @@ struct StatisticsData
     int64_t timestamp;
     double hashrate;
     float chipTemperature;
+    float chipTemperature1;
+    float chipTemperature2;
     float vrTemperature;
     float power;
     float voltage;
