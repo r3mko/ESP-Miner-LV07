@@ -354,7 +354,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
         this.maxPower = Math.max(info.maxPower, info.power);
         this.nominalVoltage = info.nominalVoltage;
-        this.maxTemp = Math.max(75, info.temp);
+        this.maxTemp = Math.max(75, info.temp2 > 0 ? (info.temp + info.temp2) / 2 : info.temp); // TODO: Or max of both?
         this.maxFrequency = Math.max(800, info.frequency);
 
         // Only collect and update chart data if there's no power fault
@@ -506,7 +506,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   static getDataForLabel(label: eChartLabel | undefined, info: ISystemInfo): number {
     switch (label) {
       case eChartLabel.hashrate:    return info.hashRate;
-      case eChartLabel.asicTemp:    return info.temp;
+      case eChartLabel.asicTemp:    return info.temp2 > 0 ? (info.temp + info.temp2) / 2 : info.temp; // TODO: Or max of both?
       case eChartLabel.vrTemp:      return info.vrTemp;
       case eChartLabel.asicVoltage: return info.coreVoltageActual;
       case eChartLabel.voltage:     return info.voltage;
