@@ -135,7 +135,7 @@ void POWER_MANAGEMENT_task(void * pvParameters)
         if (nvs_config_get_u16(NVS_CONFIG_AUTO_FAN_SPEED, 1) == 1) {
             if (power_management->chip_temp_avg >= 0) { // Ignore invalid temperature readings (-1)
                 if (power_management->chip_temp2_avg > 0) {
-                    pid_input = (power_management->chip_temp_avg + power_management->chip_temp2_avg) / 2.0; // TODO: Or max of both?
+                    pid_input = (power_management->chip_temp_avg + power_management->chip_temp2_avg) / 2.0; // average of both temps
                 } else {
                     pid_input = power_management->chip_temp_avg;
                 }
