@@ -615,7 +615,7 @@ paths:
             type: array
             items:
               type: string
-            example: hashrate,asicTemp,vrTemp,asicVoltage,voltage,power,current,fanSpeed,fanRpm,wifiRssi,freeHeap
+            example: hashrate,asicTemp,asicTemp1,asicTemp2,vrTemp,asicVoltage,voltage,power,current,fanSpeed,fanRpm,wifiRssi,freeHeap
           description: List of labels for which data should be retrieved
       tags:
         - system

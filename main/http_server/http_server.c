@@ -52,6 +52,8 @@ static char axeOSVersion[32];
 
 static const char * STATS_LABEL_HASHRATE = "hashrate";
 static const char * STATS_LABEL_ASIC_TEMP = "asicTemp";
+static const char * STATS_LABEL_ASIC_TEMP1 = "asicTemp1";
+static const char * STATS_LABEL_ASIC_TEMP2 = "asicTemp2";
 static const char * STATS_LABEL_VR_TEMP = "vrTemp";
 static const char * STATS_LABEL_ASIC_VOLTAGE = "asicVoltage";
 static const char * STATS_LABEL_VOLTAGE = "voltage";
