@@ -3,7 +3,7 @@
 #include "esp_log.h"
 #include "EMC2101.h"
 #include "EMC2103.h"
-#include "EMC2302.h"
+#include "EMC2302_LV07.h"
 #include "TMP1075_LV07.h"
 
 static const char * TAG = "thermal";
@@ -27,16 +27,16 @@ esp_err_t Thermal_init(DeviceConfig * DEVICE_CONFIG)
         ESP_LOGI(TAG, "Initializing EMC2103 (Temperature offset: %dC)", DEVICE_CONFIG->emc_temp_offset);
         return EMC2103_init();
     }
-    if (DEVICE_CONFIG->EMC2302) {
-        ESP_LOGI(TAG, "Initializing EMC2302 and TMP1075s (Temperature offset: %dC)", DEVICE_CONFIG->emc_temp_offset);
-        esp_err_t res_emc2302   = EMC2302_init();
-        esp_err_t res_tmp1075_A = TMP1075_LV07_init(&sensor_A, DEVICE_CONFIG->TMP1075_A, "TMP1075_A");
-        esp_err_t res_tmp1075_B = TMP1075_LV07_init(&sensor_B, DEVICE_CONFIG->TMP1075_B, "TMP1075_B");
+    if (DEVICE_CONFIG->EMC2302_LV07) {
+        ESP_LOGI(TAG, "Initializing EMC2302_LV07 and TMP1075_LV07s (Temperature offset: %dC)", DEVICE_CONFIG->emc_temp_offset);
+        esp_err_t res_emc2302_LV07 = EMC2302_LV07_init();
+        esp_err_t res_tmp1075_A    = TMP1075_LV07_init(&sensor_A, DEVICE_CONFIG->TMP1075_A, "TMP1075_A");
+        esp_err_t res_tmp1075_B    = TMP1075_LV07_init(&sensor_B, DEVICE_CONFIG->TMP1075_B, "TMP1075_B");
 
         // return the first non-ESP_OK, or ESP_OK if all succeed
-        if (res_emc2302   != ESP_OK) return res_emc2302;
-        if (res_tmp1075_A != ESP_OK) return res_tmp1075_A;
-        if (res_tmp1075_B != ESP_OK) return res_tmp1075_B;
+        if (res_emc2302_LV07 != ESP_OK) return res_emc2302_LV07;
+        if (res_tmp1075_A    != ESP_OK) return res_tmp1075_A;
+        if (res_tmp1075_B    != ESP_OK) return res_tmp1075_B;
 
         return ESP_OK;
     }
@@ -53,9 +53,9 @@ esp_err_t Thermal_set_fan_percent(DeviceConfig * DEVICE_CONFIG, float percent)
     if (DEVICE_CONFIG->EMC2103) {
         EMC2103_set_fan_speed(percent);
     }
-    if (DEVICE_CONFIG->EMC2302) {
-        EMC2302_set_fan_speed(0, percent);
-        EMC2302_set_fan_speed(1, percent);
+    if (DEVICE_CONFIG->EMC2302_LV07) {
+        EMC2302_LV07_set_fan_speed(0, percent);
+        EMC2302_LV07_set_fan_speed(1, percent);
     }
 
     return ESP_OK;
@@ -69,8 +69,8 @@ uint16_t Thermal_get_fan_speed(DeviceConfig * DEVICE_CONFIG)
     if (DEVICE_CONFIG->EMC2103) {
         return EMC2103_get_fan_speed();
     }
-    if (DEVICE_CONFIG->EMC2302) {
-        return EMC2302_get_fan_speed(0);
+    if (DEVICE_CONFIG->EMC2302_LV07) {
+        return EMC2302_LV07_get_fan_speed(0);
     }
 
     return 0;
@@ -93,7 +93,7 @@ float Thermal_get_chip_temp(GlobalState * GLOBAL_STATE)
     if (GLOBAL_STATE->DEVICE_CONFIG.EMC2103) {
         return EMC2103_get_external_temp() + temp_offset;
     }
-    if (GLOBAL_STATE->DEVICE_CONFIG.EMC2302) {
+    if (GLOBAL_STATE->DEVICE_CONFIG.EMC2302_LV07) {
         return TMP1075_LV07_read_temperature(&sensor_A) + temp_offset;
     }
     return -1;
@@ -109,7 +109,7 @@ float Thermal_get_chip_temp2(GlobalState * GLOBAL_STATE)
     if (GLOBAL_STATE->DEVICE_CONFIG.EMC2103) {
         return EMC2103_get_external_temp2() + temp_offset;
     }
-    if (GLOBAL_STATE->DEVICE_CONFIG.EMC2302) {
+    if (GLOBAL_STATE->DEVICE_CONFIG.EMC2302_LV07) {
         return TMP1075_LV07_read_temperature(&sensor_B) + temp_offset;
     }
     return -1;

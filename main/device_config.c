@@ -61,7 +61,7 @@ esp_err_t device_config_init(void * pvParameters)
     GLOBAL_STATE->DEVICE_CONFIG.asic_enable = nvs_config_get_u16(NVS_CONFIG_ASIC_ENABLE, 0) != 0;
     GLOBAL_STATE->DEVICE_CONFIG.EMC2101 = nvs_config_get_u16(NVS_CONFIG_EMC2101, 0) != 0;
     GLOBAL_STATE->DEVICE_CONFIG.EMC2103 = nvs_config_get_u16(NVS_CONFIG_EMC2103, 0) != 0;
-    GLOBAL_STATE->DEVICE_CONFIG.EMC2302 = nvs_config_get_u16(NVS_CONFIG_EMC2302, 0) != 0;
+    GLOBAL_STATE->DEVICE_CONFIG.EMC2302_LV07 = nvs_config_get_u16(NVS_CONFIG_EMC2302_LV07, 0) != 0;
     GLOBAL_STATE->DEVICE_CONFIG.emc_internal_temp = nvs_config_get_u16(NVS_CONFIG_EMC_INTERNAL_TEMP, 0) != 0;
     GLOBAL_STATE->DEVICE_CONFIG.emc_ideality_factor = nvs_config_get_u16(NVS_CONFIG_EMC_IDEALITY_FACTOR, 0);
     GLOBAL_STATE->DEVICE_CONFIG.emc_beta_compensation = nvs_config_get_u16(NVS_CONFIG_EMC_BETA_COMPENSATION, 0);

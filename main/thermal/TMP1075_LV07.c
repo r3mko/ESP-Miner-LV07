@@ -11,13 +11,13 @@
  */
 esp_err_t TMP1075_LV07_init(tmp1075_t *sensor, uint8_t i2c_address, const char *TAG) {
     if (sensor == NULL || TAG == NULL) {
-        ESP_LOGE("TMP1075", "NULL pointer in sensor or tag");
+        ESP_LOGE("TMP1075_LV07", "NULL pointer in sensor or tag");
         return ESP_FAIL;
     }
 
     sensor->TAG = TAG;
 
-    ESP_LOGI(sensor->TAG, "Initializing TMP1075 at 0x%02X", i2c_address);
+    ESP_LOGI(sensor->TAG, "Initializing TMP1075_LV07 at 0x%02X", i2c_address);
 
     if (i2c_bitaxe_add_device(i2c_address, &sensor->dev_handle, sensor->TAG) != ESP_OK) {
         ESP_LOGE(sensor->TAG, "Failed to add device");
@@ -32,7 +32,7 @@ float TMP1075_LV07_read_temperature(tmp1075_t *sensor) {
     esp_err_t err;
 
     if (sensor == NULL) {
-        ESP_LOGE("TMP1075", "NULL pointer in sensor");
+        ESP_LOGE("TMP1075_LV07", "NULL pointer in sensor");
         return ESP_FAIL;
     }
 

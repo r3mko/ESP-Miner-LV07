@@ -10,7 +10,7 @@
 #include "i2c_bitaxe.h"
 #include "DS4432U.h"
 #include "EMC2101.h"
-#include "EMC2302.h"
+#include "EMC2302_LV07.h"
 #include "INA260.h"
 #include "adc.h"
 #include "global_state.h"
@@ -236,10 +236,10 @@ esp_err_t test_init_peripherals(GlobalState * GLOBAL_STATE) {
 
     // TODO: EMC2103
 
-    if (GLOBAL_STATE->DEVICE_CONFIG.EMC2302) {
-        ESP_RETURN_ON_ERROR(EMC2302_init(), TAG, "EMC2302 init failed!");
-        EMC2302_set_fan_speed(0, 1);
-        EMC2302_set_fan_speed(1, 1);
+    if (GLOBAL_STATE->DEVICE_CONFIG.EMC2302_LV07) {
+        ESP_RETURN_ON_ERROR(EMC2302_LV07_init(), TAG, "EMC2302_LV07 init failed!");
+        EMC2302_LV07_set_fan_speed(0, 1);
+        EMC2302_LV07_set_fan_speed(1, 1);
         TMP1075_LV07_init(&sensor_A, GLOBAL_STATE->DEVICE_CONFIG.TMP1075_A, "TMP1075_A");
         TMP1075_LV07_init(&sensor_B, GLOBAL_STATE->DEVICE_CONFIG.TMP1075_B, "TMP1075_B");
     }

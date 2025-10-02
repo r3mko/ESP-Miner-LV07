@@ -31,7 +31,7 @@ SRCS
     "./tasks/statistics_task.c"
     "./thermal/EMC2101.c"
     "./thermal/EMC2103.c"
-    "./thermal/EMC2302.c"
+    "./thermal/EMC2302_LV07.c"
     "./thermal/TMP1075_LV07.c"
     "./thermal/thermal.c"
     "./thermal/PID.c"
