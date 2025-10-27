@@ -15,7 +15,7 @@ typedef struct {
     const char             *TAG;
 } tmp1075_t;
 
-esp_err_t TMP1075_LV07_init(tmp1075_t *sensor, uint8_t i2c_address, const char *TAG);
+esp_err_t TMP1075_LV07_init(tmp1075_t *sensor, uint8_t i2c_address, const char *TAG, int temp_offset_param);
 float TMP1075_LV07_read_temperature(tmp1075_t *sensor);
 
 #endif /* TMP1075_LV07_H_ */

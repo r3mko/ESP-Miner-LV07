@@ -13,8 +13,7 @@ tmp1075_t sensor_A, sensor_B;
 esp_err_t Thermal_init(DeviceConfig * DEVICE_CONFIG)
 {
     if (DEVICE_CONFIG->EMC2101) {
-        ESP_LOGI(TAG, "Initializing EMC2101 (Temperature offset: %dC)", DEVICE_CONFIG->emc_temp_offset);
-        esp_err_t res = EMC2101_init();
+        esp_err_t res = EMC2101_init(DEVICE_CONFIG->emc_temp_offset);
         // TODO: Improve this check.
         if (DEVICE_CONFIG->emc_ideality_factor != 0x00) {
             ESP_LOGI(TAG, "EMC2101 configuration: Ideality Factor: %02x, Beta Compensation: %02x", DEVICE_CONFIG->emc_ideality_factor, DEVICE_CONFIG->emc_beta_compensation);
@@ -24,14 +23,13 @@ esp_err_t Thermal_init(DeviceConfig * DEVICE_CONFIG)
         return res;
     }
     if (DEVICE_CONFIG->EMC2103) {
-        ESP_LOGI(TAG, "Initializing EMC2103 (Temperature offset: %dC)", DEVICE_CONFIG->emc_temp_offset);
-        return EMC2103_init();
+        return EMC2103_init(DEVICE_CONFIG->emc_temp_offset);
     }
     if (DEVICE_CONFIG->EMC2302_LV07) {
-        ESP_LOGI(TAG, "Initializing EMC2302_LV07 and TMP1075_LV07s (Temperature offset: %dC)", DEVICE_CONFIG->emc_temp_offset);
+        ESP_LOGI(TAG, "Initializing EMC2302_LV07 and TMP1075_LV07s (Temperature offset: %d °C)", DEVICE_CONFIG->emc_temp_offset);
         esp_err_t res_emc2302_LV07 = EMC2302_LV07_init();
-        esp_err_t res_tmp1075_A    = TMP1075_LV07_init(&sensor_A, DEVICE_CONFIG->TMP1075_A, "TMP1075_A");
-        esp_err_t res_tmp1075_B    = TMP1075_LV07_init(&sensor_B, DEVICE_CONFIG->TMP1075_B, "TMP1075_B");
+        esp_err_t res_tmp1075_A    = TMP1075_LV07_init(&sensor_A, DEVICE_CONFIG->TMP1075_A, "TMP1075_A", DEVICE_CONFIG->emc_temp_offset);
+        esp_err_t res_tmp1075_B    = TMP1075_LV07_init(&sensor_B, DEVICE_CONFIG->TMP1075_B, "TMP1075_B", DEVICE_CONFIG->emc_temp_offset);
 
         // return the first non-ESP_OK, or ESP_OK if all succeed
         if (res_emc2302_LV07 != ESP_OK) return res_emc2302_LV07;
@@ -48,14 +46,14 @@ esp_err_t Thermal_init(DeviceConfig * DEVICE_CONFIG)
 esp_err_t Thermal_set_fan_percent(DeviceConfig * DEVICE_CONFIG, float percent)
 {
     if (DEVICE_CONFIG->EMC2101) {
-        EMC2101_set_fan_speed(percent);
+        return EMC2101_set_fan_speed(percent);
     }
     if (DEVICE_CONFIG->EMC2103) {
-        EMC2103_set_fan_speed(percent);
+        return EMC2103_set_fan_speed(percent);
     }
     if (DEVICE_CONFIG->EMC2302_LV07) {
-        EMC2302_LV07_set_fan_speed(0, percent);
-        EMC2302_LV07_set_fan_speed(1, percent);
+        return EMC2302_LV07_set_fan_speed(0, percent);
+        return EMC2302_LV07_set_fan_speed(1, percent);
     }
 
     return ESP_OK;
@@ -82,19 +80,18 @@ float Thermal_get_chip_temp(GlobalState * GLOBAL_STATE)
         return -1;
     }
 
-    int8_t temp_offset = GLOBAL_STATE->DEVICE_CONFIG.emc_temp_offset;
     if (GLOBAL_STATE->DEVICE_CONFIG.EMC2101) {
         if (GLOBAL_STATE->DEVICE_CONFIG.emc_internal_temp) {
-            return EMC2101_get_internal_temp() + temp_offset;
+            return EMC2101_get_internal_temp();
         } else {
-            return EMC2101_get_external_temp() + temp_offset;
+            return EMC2101_get_external_temp();
         }
     }
     if (GLOBAL_STATE->DEVICE_CONFIG.EMC2103) {
-        return EMC2103_get_external_temp() + temp_offset;
+        return EMC2103_get_external_temp();
     }
     if (GLOBAL_STATE->DEVICE_CONFIG.EMC2302_LV07) {
-        return TMP1075_LV07_read_temperature(&sensor_A) + temp_offset;
+        return TMP1075_LV07_read_temperature(&sensor_A);
     }
     return -1;
 }
@@ -105,12 +102,11 @@ float Thermal_get_chip_temp2(GlobalState * GLOBAL_STATE)
         return -1;
     }
 
-    int8_t temp_offset = GLOBAL_STATE->DEVICE_CONFIG.emc_temp_offset;
     if (GLOBAL_STATE->DEVICE_CONFIG.EMC2103) {
-        return EMC2103_get_external_temp2() + temp_offset;
+        return EMC2103_get_external_temp2();
     }
     if (GLOBAL_STATE->DEVICE_CONFIG.EMC2302_LV07) {
-        return TMP1075_LV07_read_temperature(&sensor_B) + temp_offset;
+        return TMP1075_LV07_read_temperature(&sensor_B);
     }
     return -1;
 }

@@ -75,11 +75,11 @@ uint16_t EMC2302_LV07_get_fan_speed(uint8_t devicenum) {
 }
 
 float EMC2302_LV07_get_external_temp(void) {
-    // We don't have temperature on this chip, so fake it
-    return 0.0;
+    // We don't have temperature on this chip
+    return -1;
 }
 
 uint8_t EMC2302_LV07_get_internal_temp(void) {
-    // We don't have temperature on this chip, so fake it
-    return 0;
+    // We don't have temperature on this chip
+    return -1;
 }

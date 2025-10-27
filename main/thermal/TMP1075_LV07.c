@@ -4,12 +4,14 @@
 #include "esp_log.h"
 #include "TMP1075_LV07.h"
 
+static int temp_offset;
+
 /**
  * @brief Initialize the TMP1075 sensor.
  *
  * @return esp_err_t ESP_OK on success, or an error code on failure.
  */
-esp_err_t TMP1075_LV07_init(tmp1075_t *sensor, uint8_t i2c_address, const char *TAG) {
+esp_err_t TMP1075_LV07_init(tmp1075_t *sensor, uint8_t i2c_address, const char *TAG, int temp_offset_param) {
     if (sensor == NULL || TAG == NULL) {
         ESP_LOGE("TMP1075_LV07", "NULL pointer in sensor or tag");
         return ESP_FAIL;
@@ -18,6 +20,8 @@ esp_err_t TMP1075_LV07_init(tmp1075_t *sensor, uint8_t i2c_address, const char *
     sensor->TAG = TAG;
 
     ESP_LOGI(sensor->TAG, "Initializing TMP1075_LV07 at 0x%02X", i2c_address);
+
+    temp_offset = temp_offset_param;
 
     if (i2c_bitaxe_add_device(i2c_address, &sensor->dev_handle, sensor->TAG) != ESP_OK) {
         ESP_LOGE(sensor->TAG, "Failed to add device");
@@ -39,7 +43,7 @@ float TMP1075_LV07_read_temperature(tmp1075_t *sensor) {
     err = i2c_bitaxe_register_read(sensor->dev_handle, TMP1075_LV07_TEMP_REG, data, 2);
     if (err != ESP_OK) {
         ESP_LOGE(sensor->TAG, "Failed to read temperature: %s", esp_err_to_name(err));
-        return 0;
+        return -1;
     }
 
     // Combine MSB + upper nibble of LSB into a signed 12‐bit value:
@@ -53,5 +57,5 @@ float TMP1075_LV07_read_temperature(tmp1075_t *sensor) {
 
     // Each LSB corresponds to 0.0625 °C. Multiply raw12 by 0.0625f to get a float °C:
     float temp = raw12 * 0.0625f;
-    return temp;
+    return temp + temp_offset;
 }
