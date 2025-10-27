@@ -240,8 +240,8 @@ esp_err_t test_init_peripherals(GlobalState * GLOBAL_STATE) {
         ESP_RETURN_ON_ERROR(EMC2302_LV07_init(), TAG, "EMC2302_LV07 init failed!");
         EMC2302_LV07_set_fan_speed(0, 1);
         EMC2302_LV07_set_fan_speed(1, 1);
-        TMP1075_LV07_init(&sensor_A, GLOBAL_STATE->DEVICE_CONFIG.TMP1075_A, "TMP1075_A");
-        TMP1075_LV07_init(&sensor_B, GLOBAL_STATE->DEVICE_CONFIG.TMP1075_B, "TMP1075_B");
+        TMP1075_LV07_init(&sensor_A, GLOBAL_STATE->DEVICE_CONFIG.TMP1075_A, "TMP1075_A", GLOBAL_STATE->DEVICE_CONFIG.emc_temp_offset);
+        TMP1075_LV07_init(&sensor_B, GLOBAL_STATE->DEVICE_CONFIG.TMP1075_B, "TMP1075_B", GLOBAL_STATE->DEVICE_CONFIG.emc_temp_offset);
     }
 
     if (GLOBAL_STATE->DEVICE_CONFIG.INA260) {
