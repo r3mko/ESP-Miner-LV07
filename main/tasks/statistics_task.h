@@ -5,10 +5,9 @@ typedef struct StatisticsData * StatisticsDataPtr;
 
 struct StatisticsData
 {
-    int64_t timestamp;
-    double hashrate;
-    float hashrateRegister;
-    uint32_t errorCountRegister;
+    uint32_t timestamp;
+    float hashrate;
+    uint32_t errorCount;
     float chipTemperature;
     float chipTemperature1;
     float chipTemperature2;
@@ -17,8 +16,9 @@ struct StatisticsData
     float voltage;
     float current;
     int16_t coreVoltageActual;
-    uint16_t fanSpeed;
+    float fanSpeed;
     uint16_t fanRPM;
+    uint16_t fan2RPM;
     int8_t wifiRSSI;
     uint32_t freeHeap;
 };

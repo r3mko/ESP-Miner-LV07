@@ -269,6 +269,7 @@ void stratum_primary_heartbeat(void * pvParameters)
 static void decode_mining_notification(GlobalState * GLOBAL_STATE, const mining_notify *mining_notification)
 {
     double network_difficulty = networkDifficulty(mining_notification->target);
+    GLOBAL_STATE->network_nonce_diff = (uint64_t) network_difficulty;
     suffixString(network_difficulty, GLOBAL_STATE->network_diff_string, DIFF_STRING_SIZE, 0);    
 
     int coinbase_1_len = strlen(mining_notification->coinbase_1) / 2;
@@ -440,6 +441,9 @@ void stratum_task(void * pvParameters)
         if (setsockopt(GLOBAL_STATE->sock, SOL_SOCKET, SO_RCVTIMEO , &tcp_rcv_timeout, sizeof(tcp_rcv_timeout)) != 0) {
             ESP_LOGE(TAG, "Fail to setsockopt SO_RCVTIMEO ");
         }
+
+        // Store the resolved address family
+        GLOBAL_STATE->SYSTEM_MODULE.pool_addr_family = conn_info.addr_family;
 
         stratum_reset_uid(GLOBAL_STATE);
         cleanQueue(GLOBAL_STATE);

@@ -31,6 +31,8 @@ SRCS
     "./tasks/hashrate_monitor_task.c"
     "./thermal/EMC2101.c"
     "./thermal/EMC2103.c"
+    "./thermal/EMC2302.c"
+    "./thermal/TMP1075.c"
     "./thermal/EMC2302_LV07.c"
     "./thermal/TMP1075_LV07.c"
     "./thermal/thermal.c"
@@ -41,6 +43,7 @@ SRCS
     "./power/power.c"
     "./power/vcore.c"
     "./power/asic_reset.c"
+    "./power/asic_init.c"
 
 INCLUDE_DIRS
     "."

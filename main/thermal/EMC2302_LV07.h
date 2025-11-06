@@ -74,9 +74,9 @@ typedef enum
     EMC2302_LV07_RATE_32_HZ,   ///< 32_HZ
 } emc2302_lv07_rate_t;
 
+esp_err_t EMC2302_LV07_init();
 esp_err_t EMC2302_LV07_set_fan_speed(uint8_t, float);
 uint16_t EMC2302_LV07_get_fan_speed(uint8_t);
-esp_err_t EMC2302_LV07_init();
 float EMC2302_LV07_get_external_temp(void);
 uint8_t EMC2302_LV07_get_internal_temp(void);
 

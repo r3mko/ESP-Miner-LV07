@@ -10,10 +10,7 @@ static const char *TAG = "EMC2302_LV07";
 static i2c_master_dev_handle_t emc2302_lv07_dev_handle;
 
 esp_err_t EMC2302_LV07_init() {
-    if (i2c_bitaxe_add_device(EMC2302_LV07_I2CADDR_DEFAULT, &emc2302_lv07_dev_handle, TAG) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to add device");
-        return ESP_FAIL;
-    }
+    ESP_RETURN_ON_ERROR(i2c_bitaxe_add_device(EMC2302_LV07_I2CADDR_DEFAULT, &emc2302_lv07_dev_handle, TAG), TAG, "Failed to add device");
 
     ESP_LOGI(TAG, "Initializing: EMC2302_LV07 fan configuration (RNG=00)");
 
@@ -59,6 +56,11 @@ uint16_t EMC2302_LV07_get_fan_speed(uint8_t devicenum) {
 
     RPM = (tach_msb << 5) + ((tach_lsb >> 3) & 0x1F);
     RPM = EMC2302_LV07_FAN_RPM_NUMERATOR / RPM;
+
+    if (RPM > UINT16_MAX) {
+        ESP_LOGW(TAG, "RPM %u exceeds uint16_t range, clamping", RPM);
+        RPM = UINT16_MAX;
+    }
 
     // DEBUG: Get fan speed and config
     //
