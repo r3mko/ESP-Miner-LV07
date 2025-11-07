@@ -185,6 +185,7 @@ static lv_obj_t * create_screen_with_qr(SystemModule * module, int expected_line
     // Give text a bit more space on larger displays
     if (screen_lines > expected_lines) lv_obj_set_style_pad_row(text_cont, 1, LV_PART_MAIN);
 
+    /* Disable QR code for now as it is not very useful on small displays
     lv_obj_t * qr = lv_qrcode_create(scr);
     lv_qrcode_set_size(qr, 32);
     lv_qrcode_set_dark_color(qr, lv_color_black());
@@ -193,6 +194,7 @@ static lv_obj_t * create_screen_with_qr(SystemModule * module, int expected_line
     char data[64];
     snprintf(data, sizeof(data), "WIFI:S:%s;;", module->ap_ssid);
     lv_qrcode_update(qr, data, strlen(data));
+    */
 
     *out_text_cont = text_cont;
     return scr;
