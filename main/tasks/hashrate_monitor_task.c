@@ -22,7 +22,6 @@ static float sum_hashrates(measurement_t * measurement, int asic_count)
 
     float total = 0;
     for (int asic_nr = 0; asic_nr < asic_count; asic_nr++) {
-        if (measurement[asic_nr].hashrate == 0.0) return 0.0;
         total += measurement[asic_nr].hashrate;
     }
     return total;
