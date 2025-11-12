@@ -4,6 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 import { HashSuffixPipe } from 'src/app/pipes/hash-suffix.pipe';
+import { ByteSuffixPipe } from 'src/app/pipes/byte-suffix.pipe';
 import { DiffSuffixPipe } from 'src/app/pipes/diff-suffix.pipe';
 import { QuicklinkService } from 'src/app/services/quicklink.service';
 import { ShareRejectionExplanationService } from 'src/app/services/share-rejection-explanation.service';
@@ -643,7 +644,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   public getHeatmapColor(info: ISystemInfo, domainHashrate: number): string {
     const ratio = Math.max(0, Math.min(2, (domainHashrate / info.expectedHashrate) * this.getAsicsAmount(info)) * this.getAsicDomainsAmount(info));
     const deviation = Math.abs(ratio - 1);  // 0 = perfect, 1 = 100% off
-    const t = 1 - Math.pow(1 - deviation, 5);
+    const t = 1 - Math.pow(1 - deviation, 3);
     const target = ratio > 1 ? 255 : 0; // gradient from 0: black, 1: primary-color, 2: white
 
     const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim();
@@ -699,7 +700,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   static getDataForLabel(label: eChartLabel | undefined, info: ISystemInfo): number {
     switch (label) {
       case eChartLabel.hashrate:           return info.hashRate;
-      case eChartLabel.errorCount:         return info.hashrateMonitor?.errorCount;
+      case eChartLabel.errorPercentage:    return info.errorPercentage;
       case eChartLabel.asicTemp:           return info.temp2 > 0 ? (info.temp + info.temp2) / 2 : info.temp; // average of both temps
       case eChartLabel.asicTemp1:          return info.temp;
       case eChartLabel.asicTemp2:          return info.temp2;
@@ -719,6 +720,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   static getSettingsForLabel(label: eChartLabel): {suffix: string; precision: number} {
     switch (label) {
+      case eChartLabel.errorPercentage:  return {suffix: ' %', precision: 2};
       case eChartLabel.asicTemp:
       case eChartLabel.asicTemp1:
       case eChartLabel.asicTemp2:
@@ -728,7 +730,8 @@ export class HomeComponent implements OnInit, OnDestroy {
       case eChartLabel.power:            return {suffix: ' W', precision: 1};
       case eChartLabel.current:          return {suffix: ' A', precision: 1};
       case eChartLabel.fanSpeed:         return {suffix: ' %', precision: 1};
-      case eChartLabel.fanRpm:           return {suffix: ' rpm', precision: 0};
+      case eChartLabel.fanRpm:
+      case eChartLabel.fan2Rpm:          return {suffix: ' rpm', precision: 0};
       case eChartLabel.wifiRssi:         return {suffix: ' dBm', precision: 0};
       default:                           return {suffix: '', precision: 0};
     }
@@ -739,10 +742,10 @@ export class HomeComponent implements OnInit, OnDestroy {
       case eChartLabel.hashrate:
         return HashSuffixPipe.transform(value, args);
       case eChartLabel.freeHeap:
-        return (value / 1000) + ' kB';
+        return ByteSuffixPipe.transform(value, args);
       default:
         const settings = HomeComponent.getSettingsForLabel(datasetLabel);
-        return value.toFixed(settings.precision) + settings.suffix;
+        return value.toLocaleString(undefined, { useGrouping: false, maximumFractionDigits: args?.tickmark ? undefined : settings.precision }) + settings.suffix;
     }
   }
 

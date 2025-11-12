@@ -117,7 +117,6 @@ void statistics_task(void * pvParameters)
     GlobalState * GLOBAL_STATE = (GlobalState *) pvParameters;
     SystemModule * sys_module = &GLOBAL_STATE->SYSTEM_MODULE;
     PowerManagementModule * power_management = &GLOBAL_STATE->POWER_MANAGEMENT_MODULE;
-    HashrateMonitorModule * hashrate_monitor = &GLOBAL_STATE->HASHRATE_MONITOR_MODULE;
     struct StatisticsData statsData = {};
 
     TickType_t taskWakeTime = xTaskGetTickCount();
@@ -135,7 +134,7 @@ void statistics_task(void * pvParameters)
 
                 statsData.timestamp = currentTime;
                 statsData.hashrate = sys_module->current_hashrate;
-                statsData.errorCount = hashrate_monitor->error_count;
+                statsData.errorPercentage = sys_module->error_percentage;
                 if (power_management->chip_temp2_avg > 0) {
                     statsData.chipTemperature = (power_management->chip_temp_avg + power_management->chip_temp2_avg) / 2.0; // average of both temps
                     statsData.chipTemperature1 = power_management->chip_temp_avg;

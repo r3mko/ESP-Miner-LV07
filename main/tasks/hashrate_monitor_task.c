@@ -1,20 +1,20 @@
 #include <string.h>
 #include <esp_heap_caps.h>
+#include <math.h>
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "system.h"
 #include "common.h"
 #include "asic.h"
+#include "utils.h"
+
+#define EPSILON 0.0001f
 
 #define POLL_RATE 5000
-#define EMA_ALPHA 12
 
-#define HASH_CNT_LSB 0x100000000uLL // Hash counters are incremented on difficulty 1 (2^32 hashes)
 #define HASHRATE_UNIT 0x100000uLL // Hashrate register unit (2^24 hashes)
 
 static const char *TAG = "hashrate_monitor";
-
-static float frequency_value;
 
 static float sum_hashrates(measurement_t * measurement, int asic_count)
 {
@@ -22,50 +22,23 @@ static float sum_hashrates(measurement_t * measurement, int asic_count)
 
     float total = 0;
     for (int asic_nr = 0; asic_nr < asic_count; asic_nr++) {
-        if (measurement[asic_nr].hashrate == 0.0) return 0.0;
         total += measurement[asic_nr].hashrate;
     }
-    return total;
-}
-
-static uint32_t sum_values(measurement_t * measurement, int asic_count)
-{
-    if (asic_count == 1) return measurement[0].value;
-
-    uint32_t total = 0;
-    for (int asic_nr = 0; asic_nr < asic_count; asic_nr++) total += measurement[asic_nr].value;
     return total;
 }
 
 static void clear_measurements(GlobalState * GLOBAL_STATE)
 {
     HashrateMonitorModule * HASHRATE_MONITOR_MODULE = &GLOBAL_STATE->HASHRATE_MONITOR_MODULE;
-    PowerManagementModule * POWER_MANAGEMENT_MODULE = &GLOBAL_STATE->POWER_MANAGEMENT_MODULE;
 
     int asic_count = GLOBAL_STATE->DEVICE_CONFIG.family.asic_count;
     int hash_domains = GLOBAL_STATE->DEVICE_CONFIG.family.asic.hash_domains;
-    float expected_hashrate = POWER_MANAGEMENT_MODULE->expected_hashrate;
 
     memset(HASHRATE_MONITOR_MODULE->total_measurement, 0, asic_count * sizeof(measurement_t));
     if (hash_domains > 0) {
         memset(HASHRATE_MONITOR_MODULE->domain_measurements[0], 0, asic_count * hash_domains * sizeof(measurement_t));
     }
     memset(HASHRATE_MONITOR_MODULE->error_measurement, 0, asic_count * sizeof(measurement_t));
-
-    for (int asic_nr = 0; asic_nr < asic_count; asic_nr++) {
-        HASHRATE_MONITOR_MODULE->total_measurement[asic_nr].expected_hashrate = expected_hashrate / asic_count;
-        for (int hash_domain = 0; hash_domain < hash_domains; hash_domain++) {
-            HASHRATE_MONITOR_MODULE->domain_measurements[asic_nr][hash_domain].expected_hashrate = expected_hashrate / asic_count / hash_domains;
-        }
-    }
-}
-
-static float hash_counter_to_ghs(uint32_t duration_ms, uint32_t counter)
-{
-    if (duration_ms == 0) return 0.0f;
-    float seconds = duration_ms / 1000.0;
-    float hashrate = counter / seconds * (float)HASH_CNT_LSB; // Make sure it stays in float
-    return hashrate / 1e9f; // Convert to Gh/s
 }
 
 static void update_hashrate(uint32_t value, measurement_t * measurement, int asic_nr)
@@ -85,13 +58,7 @@ static void update_hash_counter(uint32_t time_ms, uint32_t value, measurement_t 
     if (previous_time_ms != 0) {
         uint32_t duration_ms = time_ms - previous_time_ms;
         uint32_t counter = value - measurement->value; // Compute counter difference, handling uint32_t wraparound
-
-        float hashrate = hash_counter_to_ghs(duration_ms, counter);
-
-        if (measurement->expected_hashrate > 0.0 && measurement->hashrate == 0.0) {
-            measurement->hashrate = hashrate == 0.0 ? 0.0 : measurement->expected_hashrate;
-        }
-        measurement->hashrate = ((measurement->hashrate * (EMA_ALPHA - 1)) + hashrate) / EMA_ALPHA;
+        measurement->hashrate = hashCounterToGhs(duration_ms, counter);
     }
 
     measurement->value = value;
@@ -127,8 +94,11 @@ void hashrate_monitor_task(void *pvParameters)
 
         vTaskDelay(100 / portTICK_PERIOD_MS);
 
-        SYSTEM_MODULE->current_hashrate = sum_hashrates(HASHRATE_MONITOR_MODULE->total_measurement, asic_count);
-        HASHRATE_MONITOR_MODULE->error_count = sum_values(HASHRATE_MONITOR_MODULE->error_measurement, asic_count);
+        float current_hashrate = sum_hashrates(HASHRATE_MONITOR_MODULE->total_measurement, asic_count);
+        float error_hashrate = sum_hashrates(HASHRATE_MONITOR_MODULE->error_measurement, asic_count);
+
+        SYSTEM_MODULE->current_hashrate = current_hashrate;
+        SYSTEM_MODULE->error_percentage = current_hashrate > 0 ? error_hashrate / current_hashrate * 100.f : 0;
 
         vTaskDelayUntil(&taskWakeTime, POLL_RATE / portTICK_PERIOD_MS);
     }
@@ -140,19 +110,12 @@ void hashrate_monitor_register_read(void *pvParameters, register_type_t register
 
     GlobalState * GLOBAL_STATE = (GlobalState *)pvParameters;
     HashrateMonitorModule * HASHRATE_MONITOR_MODULE = &GLOBAL_STATE->HASHRATE_MONITOR_MODULE;
-    PowerManagementModule * POWER_MANAGEMENT_MODULE = &GLOBAL_STATE->POWER_MANAGEMENT_MODULE;
 
     int asic_count = GLOBAL_STATE->DEVICE_CONFIG.family.asic_count;
 
     if (asic_nr >= asic_count) {
         ESP_LOGE(TAG, "Asic nr out of bounds [%d]", asic_nr);
         return;
-    }
-
-    // Reset statistics on start and when frequency changes
-    if (POWER_MANAGEMENT_MODULE->frequency_value != frequency_value) {
-        clear_measurements(GLOBAL_STATE);
-        frequency_value = POWER_MANAGEMENT_MODULE->frequency_value;
     }
 
     switch(register_type) {
