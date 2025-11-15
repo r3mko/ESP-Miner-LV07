@@ -57,11 +57,6 @@ uint16_t EMC2302_LV07_get_fan_speed(uint8_t devicenum) {
     RPM = (tach_msb << 5) + ((tach_lsb >> 3) & 0x1F);
     RPM = EMC2302_LV07_FAN_RPM_NUMERATOR / RPM;
 
-    if (RPM > UINT16_MAX) {
-        ESP_LOGW(TAG, "RPM %u exceeds uint16_t range, clamping", RPM);
-        RPM = UINT16_MAX;
-    }
-
     // DEBUG: Get fan speed and config
     //
     //ESP_LOGI(TAG, "Raw Fan Speed[%d] = %02X %02X", devicenum, tach_msb, tach_lsb);
