@@ -22,6 +22,6 @@ devicemodel,data,string,ultra
 boardversion,data,string,204
 rotation,data,u16,0
 autofanspeed,data,u16,1
-fanspeed,data,u16,100
+manualfanspeed,data,u16,100
 selftest,data,u16,1
 overheat_mode,data,u16,0

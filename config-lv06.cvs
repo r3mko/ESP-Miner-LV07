@@ -1,6 +1,6 @@
 key,type,encoding,value
 main,namespace,,
-hostname,data,string,lv07
+hostname,data,string,lv06
 wifissid,data,string,
 wifipass,data,string,
 stratumurl,data,string,public-pool.io
@@ -18,9 +18,9 @@ fbstratumxnsum,data,u16,0
 asicfrequency,data,u16,485
 asicvoltage,data,u16,1200
 asicmodel,data,string,BM1366
-devicemodel,data,string,lv07
-boardversion,data,string,302
-rotation,data,u16,180
-autofanspeed,data,u16,1
+devicemodel,data,string,ultra
+boardversion,data,string,0.11
+rotation,data,u16,0
+autofanspeed,data,u16,0
 manualfanspeed,data,u16,100
-selftest,data,u16,1
+selftest,data,u16,0
