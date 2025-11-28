@@ -60,6 +60,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   public maxPower: number = 0;
   public nominalVoltage: number = 0;
   public maxTemp: number = 75;
+  public maxVrTemp: number = 125;
   public maxRpm: number = 8000;
   public maxFrequency: number = 800;
 
@@ -376,6 +377,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.maxPower = Math.max(info.maxPower, info.power);
         this.nominalVoltage = info.nominalVoltage;
         this.maxTemp = Math.max(75, info.temp2 > 0 ? Math.max(info.temp, info.temp2) : info.temp); // max of both temps
+        this.maxVrTemp = Math.max(125, info.vrTemp);
         this.maxRpm = Math.max(8000, info.fanrpm, info.fan2rpm);
         this.maxFrequency = Math.max(800, info.frequency);
 

@@ -256,9 +256,12 @@
 
                 <div class="mb-3" *ngIf="info.vrTemp > 0">
                     <h6 class="flex justify-content-between mb-1">
-                        Voltage Regulator Temperature<span>{{info.vrTemp}} &deg;C</span>
+                        Voltage Regulator Temperature
+                        <span>
+                            {{info.vrTemp}} &deg;C
+                        </span>
                     </h6>
-                    <p-progressBar [value]="(info.vrTemp / 120) * 100" [styleClass]="'p-progressbar--thin'">
+                    <p-progressBar [value]="(info.vrTemp / maxVrTemp) * 100" [styleClass]="'p-progressbar--thin'">
                         <ng-template pTemplate="content" let-value></ng-template>
                     </p-progressBar>
 
