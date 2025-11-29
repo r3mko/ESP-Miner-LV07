@@ -422,6 +422,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         info.coreVoltage = parseFloat(info.coreVoltage.toFixed(2));
         info.temp = parseFloat(info.temp.toFixed(1));
         info.temp2 = parseFloat(info.temp2.toFixed(1));
+        info.vrTemp = parseFloat(info.vrTemp.toFixed(1));
 
         return info;
       }),
