@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams, HttpEvent } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { delay, Observable, of } from 'rxjs';
+import { delay, Observable, of, timeout } from 'rxjs';
 import { eChartLabel } from 'src/models/enum/eChartLabel';
 import { chartLabelKey } from 'src/models/enum/eChartLabel';
 import { chartLabelValue } from 'src/models/enum/eChartLabel';
@@ -21,7 +21,7 @@ export class SystemService {
 
   public getInfo(uri: string = ''): Observable<ISystemInfo> {
     if (environment.production) {
-      return this.httpClient.get(`${uri}/api/system/info`) as Observable<ISystemInfo>;
+      return this.httpClient.get<ISystemInfo>(`${uri}/api/system/info`).pipe(timeout(5000));
     }
 
     // Mock data for development
@@ -125,7 +125,7 @@ export class SystemService {
 
     if (environment.production) {
       const options = { params: new HttpParams().set('columns', columnList.join(',')) };
-      return this.httpClient.get(`${uri}/api/system/statistics`, options) as Observable<ISystemStatistics>;
+      return this.httpClient.get<ISystemStatistics>(`${uri}/api/system/statistics`, options).pipe(timeout(5000));
     }
 
     // Mock data for development
@@ -235,7 +235,7 @@ export class SystemService {
 
   public getAsicSettings(uri: string = ''): Observable<ISystemASIC> {
     if (environment.production) {
-      return this.httpClient.get(`${uri}/api/system/asic`) as Observable<ISystemASIC>;
+      return this.httpClient.get<ISystemASIC>(`${uri}/api/system/asic`).pipe(timeout(5000));
     }
 
     // Mock data for development
@@ -252,7 +252,7 @@ export class SystemService {
   }
 
   public getSwarmInfo(uri: string = ''): Observable<{ ip: string }[]> {
-    return this.httpClient.get(`${uri}/api/swarm/info`) as Observable<{ ip: string }[]>;
+    return this.httpClient.get<{ ip: string }[]>(`${uri}/api/swarm/info`).pipe(timeout(5000));
   }
 
   public updateSwarm(uri: string = '', swarmConfig: any) {
