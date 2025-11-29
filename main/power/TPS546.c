@@ -674,13 +674,13 @@ void TPS546_set_frequency(int newfreq)
     //ESP_LOGI(TAG, "Converted value: %d", freq);
 }
 
-int TPS546_get_temperature(void)
+float TPS546_get_temperature(void)
 {
     uint16_t value = 0;
-    int temp;
+    float temp;
 
     smb_read_word(PMBUS_READ_TEMPERATURE_1, &value);
-    temp = slinear11_2_int(value);
+    temp = slinear11_2_float(value);
     return temp;
 }
 

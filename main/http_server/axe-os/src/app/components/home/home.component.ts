@@ -681,14 +681,14 @@ export class HomeComponent implements OnInit, OnDestroy {
       case eChartLabel.asicTemp:         return this.maxTemp;
       case eChartLabel.asicTemp1:        return this.maxTemp;
       case eChartLabel.asicTemp2:        return this.maxTemp;
-      case eChartLabel.vrTemp:           return this.maxTemp + 25;
+      case eChartLabel.vrTemp:           return this.maxVrTemp;
       case eChartLabel.asicVoltage:      return info.coreVoltage;
       case eChartLabel.voltage:          return info.nominalVoltage + .5;
       case eChartLabel.power:            return this.maxPower;
       case eChartLabel.current:          return this.maxPower / info.coreVoltage;
       case eChartLabel.fanSpeed:         return 100;
-      case eChartLabel.fanRpm:           return 7000;
-      case eChartLabel.fan2Rpm:          return 7000;
+      case eChartLabel.fanRpm:           return 8000;
+      case eChartLabel.fan2Rpm:          return 8000;
       default:                           return 0;
     }
   }
