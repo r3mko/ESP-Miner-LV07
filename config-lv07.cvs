@@ -5,12 +5,16 @@ wifissid,data,string,
 wifipass,data,string,
 stratumurl,data,string,public-pool.io
 stratumport,data,u16,21496
+stratumtls,data,u16,0
+stratumcert,data,string,x
 stratumuser,data,string,
 stratumpass,data,string,x
 stratumdiff,data,u16,1000
 stratumxnsub,data,u16,0
 fbstratumurl,data,string,eusolo.ckpool.org
 fbstratumport,data,u16,3333
+fbstratumtls,data,u16,0
+fbstratumcert,data,string,x
 fbstratumuser,data,string,
 fbstratumpass,data,string,x
 fbstratumdiff,data,u16,1000
