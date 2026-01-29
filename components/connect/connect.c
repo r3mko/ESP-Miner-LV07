@@ -73,7 +73,7 @@ esp_err_t get_wifi_current_rssi(int8_t *rssi)
     return err;
 }
 
-// Function to scan for available WiFi networks
+// Function to scan for available Wi-Fi networks
 esp_err_t wifi_scan(wifi_ap_record_simple_t *ap_records, uint16_t *ap_count)
 {
     if (is_scanning) {
@@ -249,7 +249,7 @@ static void event_handler(void * arg, esp_event_base_t event_base, int32_t event
 
         wifi_softap_off();
         
-        // Create IPv6 link-local address after WiFi connection
+        // Create IPv6 link-local address after Wi-Fi connection
         esp_netif_t *netif = event->esp_netif;
         esp_err_t ipv6_err = esp_netif_create_ip6_linklocal(netif);
         if (ipv6_err != ESP_OK) {
@@ -385,7 +385,7 @@ esp_netif_t * wifi_init_sta(const char * wifi_ssid, const char * wifi_pass)
 
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_sta_config));
 
-    // IPv6 link-local address will be created after WiFi connection
+    // IPv6 link-local address will be created after Wi-Fi connection
     
     // Start DHCP client for IPv4
     esp_netif_dhcpc_start(esp_netif_sta);
@@ -418,13 +418,14 @@ void wifi_init(void * pvParameters)
     /* Initialize AP */
     wifi_init_softap(GLOBAL_STATE);
 
+    free(GLOBAL_STATE->SYSTEM_MODULE.ssid);
     GLOBAL_STATE->SYSTEM_MODULE.ssid = nvs_config_get_string(NVS_CONFIG_WIFI_SSID);
 
     /* Skip connection if SSID is null */
     if (strlen(GLOBAL_STATE->SYSTEM_MODULE.ssid) == 0) {
-        ESP_LOGI(TAG, "No WiFi SSID provided, skipping connection");
+        ESP_LOGI(TAG, "No Wi-Fi SSID provided, skipping connection");
 
-        /* Start WiFi */
+        /* Start Wi-Fi */
         ESP_ERROR_CHECK(esp_wifi_start());
 
         /* Disable power savings for best performance */

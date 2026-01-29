@@ -386,8 +386,11 @@ static void decode_mining_notification(GlobalState * GLOBAL_STATE, const mining_
 
     int coinbase_2_tag_len = scriptsig_length - coinbase_1_tag_len;
 
-    if (coinbase_2_len < coinbase_2_tag_len) return;
-    
+    if (coinbase_2_len < coinbase_2_tag_len) {
+        free(scriptsig);
+        return;
+    }
+
     if (coinbase_2_tag_len > 0) {
         hex2bin(mining_notification->coinbase_2, (uint8_t *) scriptsig + coinbase_1_tag_len, coinbase_2_tag_len);
     }
@@ -610,6 +613,8 @@ void stratum_task(void * pvParameters)
                 } else {
                     ESP_LOGW(TAG, "message result rejected: %s", stratum_api_v1_message.error_str);
                     SYSTEM_notify_rejected_share(GLOBAL_STATE, stratum_api_v1_message.error_str);
+                    free(stratum_api_v1_message.error_str);
+                    stratum_api_v1_message.error_str = NULL;
                 }
             } else if (stratum_api_v1_message.method == STRATUM_RESULT_SETUP) {
                 // Reset retry attempts after successfully receiving data.
@@ -624,6 +629,8 @@ void stratum_task(void * pvParameters)
                     }
                 } else {
                     ESP_LOGE(TAG, "setup message rejected: %s", stratum_api_v1_message.error_str);
+                    free(stratum_api_v1_message.error_str);
+                    stratum_api_v1_message.error_str = NULL;
                 }
             }
         }
