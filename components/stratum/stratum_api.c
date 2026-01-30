@@ -105,6 +105,7 @@ esp_transport_handle_t STRATUM_V1_transport_init(tls_mode tls, char * cert)
                 ESP_LOGI(TAG, "Using custom cert");
                 if (cert == NULL) {
                     ESP_LOGE(TAG, "Error: no TLS certificate");
+                    esp_transport_destroy(transport);
                     return NULL;
                 }
                 esp_transport_ssl_set_cert_data(transport, cert, strlen(cert));
@@ -416,12 +417,14 @@ int _parse_stratum_subscribe_result_message(const char * result_json_str, char *
     cJSON * result = cJSON_GetObjectItem(root, "result");
     if (result == NULL) {
         ESP_LOGE(TAG, "Unable to parse subscribe result %s", result_json_str);
+        cJSON_Delete(root);
         return -1;
     }
 
     cJSON * extranonce2_len_json = cJSON_GetArrayItem(result, 2);
     if (extranonce2_len_json == NULL) {
         ESP_LOGE(TAG, "Unable to parse extranonce2_len: %s", result->valuestring);
+        cJSON_Delete(root);
         return -1;
     }
     *extranonce2_len = extranonce2_len_json->valueint;
@@ -429,6 +432,7 @@ int _parse_stratum_subscribe_result_message(const char * result_json_str, char *
     cJSON * extranonce_json = cJSON_GetArrayItem(result, 1);
     if (extranonce_json == NULL) {
         ESP_LOGE(TAG, "Unable parse extranonce: %s", result->valuestring);
+        cJSON_Delete(root);
         return -1;
     }
     *extranonce = strdup(extranonce_json->valuestring);
