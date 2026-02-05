@@ -100,10 +100,10 @@ void FAN_CONTROLLER_task(void * pvParameters)
                         ESP_LOGI(TAG, "Temp: %.1f °C, SetPoint: %.1f °C, Output: %.1f%%", pid_input, pid_setPoint, pid_output);
                     }
                 } else {
-                    if (fabs(power_management->fan_perc - 70) > EPSILON) {
-                        ESP_LOGI(TAG, "Temperature sensor starting up, setting fan to 70%%");
-                        power_management->fan_perc = 70;
-                        if (Thermal_set_fan_percent(&GLOBAL_STATE->DEVICE_CONFIG, 0.7f) != ESP_OK) {
+                    if (fabs(power_management->fan_perc - 75) > EPSILON) {
+                        ESP_LOGI(TAG, "Temperature sensor(s) starting up, setting fan to 75%%");
+                        power_management->fan_perc = 75;
+                        if (Thermal_set_fan_percent(&GLOBAL_STATE->DEVICE_CONFIG, 0.75f) != ESP_OK) {
                             exit(EXIT_FAILURE);
                         }
                     }

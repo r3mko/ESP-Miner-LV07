@@ -21,7 +21,7 @@ void pid_init(PIDController *pid, float *input, float *output, float *setpoint,
     pid->setpoint = setpoint;
     pid->inAuto = false;
 
-    pid_set_output_limits(pid, 0, 255);
+    pid_set_output_limits(pid, 0, 100); // Default output limits of 0-100%
     pid->sampleTime = 100;
 
     pid_set_controller_direction(pid, ControllerDirection);
