@@ -7,6 +7,7 @@
 #include "work_queue.h"
 #include "esp_wifi.h"
 #include <esp_sntp.h>
+#include "esp_timer.h"
 #include <sys/time.h>
 #include <stdbool.h>
 #include <string.h>
@@ -544,7 +545,6 @@ void stratum_task(void * pvParameters)
 
         //mining.authorize - ID: 3
         STRATUM_V1_authorize(GLOBAL_STATE->transport, authorize_message_id, username, password);
-        STRATUM_V1_stamp_tx(authorize_message_id);
 
         while (1) {
             char * line = STRATUM_V1_receive_jsonrpc_line(GLOBAL_STATE->transport);
@@ -555,11 +555,7 @@ void stratum_task(void * pvParameters)
                 break;
             }
 
-            double response_time_ms = STRATUM_V1_get_response_time_ms(stratum_api_v1_message.message_id);
-            if (response_time_ms >= 0) {
-                ESP_LOGI(TAG, "Stratum response time: %.2f ms", response_time_ms);
-                GLOBAL_STATE->SYSTEM_MODULE.response_time = response_time_ms;
-            }
+            int64_t receive_time_us = esp_timer_get_time();
 
             STRATUM_V1_parse(&stratum_api_v1_message, line);
             free(line);
@@ -632,6 +628,17 @@ void stratum_task(void * pvParameters)
                     stratum_api_v1_message.error_str = NULL;
                 }
             }
+
+            float response_time_ms = STRATUM_V1_get_response_time_ms(stratum_api_v1_message.message_id, receive_time_us);
+            if (response_time_ms >= 0) {
+                ESP_LOGI(TAG, "Stratum response time: %.1f ms", response_time_ms);
+                GLOBAL_STATE->SYSTEM_MODULE.response_time = response_time_ms;
+            }
+        }
+
+        if (stratum_api_v1_message.error_str) {
+            free(stratum_api_v1_message.error_str);
+            stratum_api_v1_message.error_str = NULL;
         }
     }
     vTaskDelete(NULL);
