@@ -134,7 +134,8 @@ export class SystemApiService {
           }],
           hashrate: 441.2579,
         },
-        blockFound: 0,
+        blockFound: 1,
+        showNewBlock: true,
         coinbaseOutputs: [{value: 50, address: "payoutaddress"}],
         coinbaseValueTotalSatoshis: 50,
         coinbaseValueUserSatoshis: 50,
@@ -222,6 +223,18 @@ export class SystemApiService {
     }
 
     return of('Device restarted (mock)');
+  }
+
+  public dismissBlockFound(uri: string = '') {
+    if (environment.production && this.generatedSystemService && !uri) {
+      return this.generatedSystemService.dismissBlockFound();
+    }
+
+    if (environment.production && uri) {
+      return this.httpClient.post(`${uri}/api/system/blockFound/dismiss`, {});
+    }
+
+    return of('Block found notification dismissed (mock)');
   }
 
   public identify(uri: string = '') {

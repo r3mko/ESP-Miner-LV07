@@ -757,6 +757,41 @@ static esp_err_t POST_restart(httpd_req_t * req)
     return res;
 }
 
+static esp_err_t POST_dismiss_block_found(httpd_req_t * req)
+{
+    if (is_network_allowed(req) != ESP_OK) {
+        return httpd_resp_send_err(req, HTTPD_401_UNAUTHORIZED, "Unauthorized");
+    }
+
+    // Set CORS headers
+    if (set_cors_headers(req) != ESP_OK) {
+        httpd_resp_send_500(req);
+        return ESP_OK;
+    }
+
+    ESP_LOGI(TAG, "Dismissing block found notification");
+
+    httpd_resp_set_type(req, "application/json");
+
+    cJSON * root = cJSON_CreateObject();
+    if (root == NULL) {
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Memory allocation failed");
+        return ESP_OK;
+    }
+
+    GLOBAL_STATE->SYSTEM_MODULE.show_new_block = false;
+
+    cJSON_AddNumberToObject(root, "blockFound", GLOBAL_STATE->SYSTEM_MODULE.block_found);
+    cJSON_AddBoolToObject(root, "showNewBlock", GLOBAL_STATE->SYSTEM_MODULE.show_new_block);
+    cJSON_AddStringToObject(root, "message", "Block found notification dismissed");
+
+    esp_err_t res = HTTP_send_json(req, root, &api_common_prebuffer_len);
+
+    cJSON_Delete(root);
+
+    return res;
+}
+
 static const char* esp_reset_reason_to_string(esp_reset_reason_t reason) {
     switch (reason) {
         case ESP_RST_UNKNOWN:    return "Reset reason can not be determined";
@@ -916,6 +951,7 @@ static esp_err_t GET_system_info(httpd_req_t * req)
     cJSON_AddNumberToObject(root, "statsFrequency", nvs_config_get_u16(NVS_CONFIG_STATISTICS_FREQUENCY));
 
     cJSON_AddNumberToObject(root, "blockFound", GLOBAL_STATE->SYSTEM_MODULE.block_found);
+    cJSON_AddBoolToObject(root, "showNewBlock", GLOBAL_STATE->SYSTEM_MODULE.show_new_block);
 
     if (GLOBAL_STATE->SYSTEM_MODULE.power_fault > 0) {
         cJSON_AddStringToObject(root, "power_fault", VCORE_get_fault_string(GLOBAL_STATE));
@@ -1267,7 +1303,7 @@ esp_err_t start_rest_server(void * pvParameters)
     config.uri_match_fn = httpd_uri_match_wildcard;
     config.stack_size = 8192;
     config.max_open_sockets = 20;
-    config.max_uri_handlers = 20;
+    config.max_uri_handlers = 24;
     config.close_fn = websocket_close_fn;
     config.lru_purge_enable = true;
 
@@ -1342,6 +1378,22 @@ esp_err_t start_rest_server(void * pvParameters)
         .user_ctx = rest_context
     };
     httpd_register_uri_handler(server, &system_restart_uri);
+
+    httpd_uri_t system_restart_options_uri = {
+        .uri = "/api/system/restart", 
+        .method = HTTP_OPTIONS, 
+        .handler = handle_options_request, 
+        .user_ctx = NULL
+    };
+    httpd_register_uri_handler(server, &system_restart_options_uri);
+
+    httpd_uri_t system_dismiss_block_found_uri = {
+        .uri = "/api/system/blockFound/dismiss", 
+        .method = HTTP_POST, 
+        .handler = POST_dismiss_block_found, 
+        .user_ctx = NULL
+    };
+    httpd_register_uri_handler(server, &system_dismiss_block_found_uri);
 
     httpd_uri_t update_system_settings_uri = {
         .uri = "/api/system", 
