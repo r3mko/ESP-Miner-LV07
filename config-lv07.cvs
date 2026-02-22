@@ -4,7 +4,7 @@ hostname,data,string,lv07
 wifissid,data,string,
 wifipass,data,string,
 stratumurl,data,string,public-pool.io
-stratumport,data,u16,21496
+stratumport,data,u16,3333
 stratumtls,data,u16,0
 stratumcert,data,string,x
 stratumuser,data,string,
