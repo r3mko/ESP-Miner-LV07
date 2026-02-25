@@ -5,6 +5,7 @@
 #include "DS4432U.h"
 #include "INA260.h"
 #include "TPS546.h"
+#include "TPS546_LV08.h"
 #include "adc.h"
 #include "driver/gpio.h"
 #include "vcore.h"
@@ -13,6 +14,8 @@
 #define GPIO_PLUG_SENSE CONFIG_GPIO_PLUG_SENSE
 
 static const char *TAG = "vcore";
+
+static tps546_t vreg_0, vreg_1, vreg_2;
 
 static TPS546_CONFIG get_tps546_config(const FamilyConfig * family)
 {
@@ -30,6 +33,28 @@ static TPS546_CONFIG get_tps546_config(const FamilyConfig * family)
         config.TPS546_INIT_VOUT_MIN = 1;
         config.TPS546_INIT_VOUT_MAX = 2;
         config.TPS546_INIT_VOUT_COMMAND = 1.2;
+        config.TPS546_INIT_IOUT_OC_WARN_LIMIT = 25.00;
+        config.TPS546_INIT_IOUT_OC_FAULT_LIMIT = 30.00;
+        // Single-phase configuration
+        config.TPS546_INIT_STACK_CONFIG = 0x0000; // 1 module
+        config.TPS546_INIT_SYNC_CONFIG = 0x10;    // Disable SYNC
+        //config.TPS546_INIT_COMPENSATION_CONFIG[0] = 0x13;
+        //config.TPS546_INIT_COMPENSATION_CONFIG[1] = 0x11;
+        //config.TPS546_INIT_COMPENSATION_CONFIG[2] = 0x08;
+        //config.TPS546_INIT_COMPENSATION_CONFIG[3] = 0x19;
+        //config.TPS546_INIT_COMPENSATION_CONFIG[4] = 0x04;
+        break;
+
+    case LV08:
+        config.TPS546_INIT_PHASE = TPS546_INIT_PHASE_SINGLE;
+        config.TPS546_INIT_VIN_ON = 11.5;
+        config.TPS546_INIT_VIN_OFF = 11.0;
+        config.TPS546_INIT_VIN_UV_WARN_LIMIT = 11.5;
+        config.TPS546_INIT_VIN_OV_FAULT_LIMIT = 13.5;
+        config.TPS546_INIT_SCALE_LOOP = 0.125;
+        config.TPS546_INIT_VOUT_MIN = 2;
+        config.TPS546_INIT_VOUT_MAX = 4;
+        config.TPS546_INIT_VOUT_COMMAND = 3.6;
         config.TPS546_INIT_IOUT_OC_WARN_LIMIT = 25.00;
         config.TPS546_INIT_IOUT_OC_FAULT_LIMIT = 30.00;
         // Single-phase configuration
@@ -117,6 +142,17 @@ esp_err_t VCORE_init(GlobalState * GLOBAL_STATE)
         TPS546_CONFIG tps_config = get_tps546_config(&GLOBAL_STATE->DEVICE_CONFIG.family);
         ESP_RETURN_ON_ERROR(TPS546_init(tps_config), TAG, "TPS546 init failed!");
     }
+    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546_LV08) {
+        TPS546_CONFIG tps_config = get_tps546_config(&GLOBAL_STATE->DEVICE_CONFIG.family);
+        esp_err_t res_vreg_0 = TPS546_LV08_init(&vreg_0, GLOBAL_STATE->DEVICE_CONFIG.TPS546_0, "TPS546_0", tps_config);
+        esp_err_t res_vreg_1 = TPS546_LV08_init(&vreg_1, GLOBAL_STATE->DEVICE_CONFIG.TPS546_1, "TPS546_1", tps_config);
+        esp_err_t res_vreg_2 = TPS546_LV08_init(&vreg_2, GLOBAL_STATE->DEVICE_CONFIG.TPS546_2, "TPS546_2", tps_config);
+
+        // return the first non-ESP_OK
+        if (res_vreg_0 != ESP_OK) return res_vreg_0;
+        if (res_vreg_1 != ESP_OK) return res_vreg_1;
+        if (res_vreg_2 != ESP_OK) return res_vreg_2;
+    }
 
     if (GLOBAL_STATE->DEVICE_CONFIG.plug_sense) {
         gpio_config_t barrel_jack_conf = {
@@ -151,6 +187,18 @@ esp_err_t VCORE_set_voltage(GlobalState * GLOBAL_STATE, float core_voltage)
         uint16_t voltage_domains = GLOBAL_STATE->DEVICE_CONFIG.family.voltage_domains;
         ESP_RETURN_ON_ERROR(TPS546_set_vout(core_voltage * voltage_domains), TAG, "TPS546 set voltage failed!");
     }
+    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546_LV08) {
+        uint16_t voltage_domains = GLOBAL_STATE->DEVICE_CONFIG.family.voltage_domains;
+        float vout = core_voltage * voltage_domains;
+        esp_err_t res_vreg_0 = TPS546_LV08_set_vout(&vreg_0, vout);
+        esp_err_t res_vreg_1 = TPS546_LV08_set_vout(&vreg_1, vout);
+        esp_err_t res_vreg_2 = TPS546_LV08_set_vout(&vreg_2, vout);
+
+        // return the first non-ESP_OK
+        if (res_vreg_0 != ESP_OK) return res_vreg_0;
+        if (res_vreg_1 != ESP_OK) return res_vreg_1;
+        if (res_vreg_2 != ESP_OK) return res_vreg_2;
+    }
     if (core_voltage == 0.0f && GLOBAL_STATE->DEVICE_CONFIG.asic_enable) {
         gpio_set_level(GPIO_ASIC_ENABLE, 1);
     }
@@ -166,6 +214,15 @@ int16_t VCORE_get_voltage_mv(GlobalState * GLOBAL_STATE)
     if (GLOBAL_STATE->DEVICE_CONFIG.TPS546) {
         return TPS546_get_vout() / GLOBAL_STATE->DEVICE_CONFIG.family.voltage_domains * 1000;
     }
+    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546_LV08) {
+        float v0 = TPS546_LV08_get_vout(&vreg_0);
+        float v1 = TPS546_LV08_get_vout(&vreg_1);
+        float v2 = TPS546_LV08_get_vout(&vreg_2);
+
+        float avg = (v0 + v1 + v2) / 3.0f;
+
+        return (int16_t)(avg * 1000.0f);
+    }
     return ADC_get_vcore();
 }
 
@@ -174,13 +231,35 @@ esp_err_t VCORE_check_fault(GlobalState * GLOBAL_STATE)
     if (GLOBAL_STATE->DEVICE_CONFIG.TPS546) {
         ESP_RETURN_ON_ERROR(TPS546_check_status(GLOBAL_STATE), TAG, "TPS546 check status failed!");
     }
+    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546_LV08) {
+        esp_err_t res_vreg_0 = TPS546_LV08_check_status(&vreg_0, GLOBAL_STATE);
+        esp_err_t res_vreg_1 = TPS546_LV08_check_status(&vreg_1, GLOBAL_STATE);
+        esp_err_t res_vreg_2 = TPS546_LV08_check_status(&vreg_2, GLOBAL_STATE);
+
+        // return the first non-ESP_OK
+        if (res_vreg_0 != ESP_OK) return res_vreg_0;
+        if (res_vreg_1 != ESP_OK) return res_vreg_1;
+        if (res_vreg_2 != ESP_OK) return res_vreg_2;
+    }
     return ESP_OK;
 }
 
-const char * VCORE_get_fault_string(GlobalState * GLOBAL_STATE)
+const char* VCORE_get_fault_string(GlobalState * GLOBAL_STATE)
 {
     if (GLOBAL_STATE->DEVICE_CONFIG.TPS546) {
         return TPS546_get_error_message();
     }
+    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546_LV08) {
+        return TPS546_LV08_get_error_message();
+    }
     return NULL;
+}
+
+tps546_t *VCORE_get_vreg(int idx) {
+    switch (idx) {
+    case 0: return &vreg_0;
+    case 1: return &vreg_1;
+    case 2: return &vreg_2;
+    default: return NULL;
+    }
 }
