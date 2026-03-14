@@ -59,11 +59,15 @@ esp_err_t Thermal_set_fan_percent(DeviceConfig * DEVICE_CONFIG, float percent)
         return EMC2103_set_fan_speed(percent);
     }
     if (DEVICE_CONFIG->EMC2302) {
-        EMC2302_set_fan_speed(percent);
+        return EMC2302_set_fan_speed(percent);
     }
     if (DEVICE_CONFIG->EMC2302_LV07) {
-        return EMC2302_LV07_set_fan_speed(0, percent);
-        return EMC2302_LV07_set_fan_speed(1, percent);
+        esp_err_t res_fan_1 = EMC2302_LV07_set_fan_speed(0, percent);
+        esp_err_t res_fan_2 = EMC2302_LV07_set_fan_speed(1, percent);
+
+        // return the first non-ESP_OK
+        if (res_fan_1 != ESP_OK) return res_fan_1;
+        if (res_fan_2 != ESP_OK) return res_fan_2;
     }
 
     return ESP_OK;
@@ -90,6 +94,9 @@ uint16_t Thermal_get_fan2_speed(DeviceConfig * DEVICE_CONFIG)
 {
     if (DEVICE_CONFIG->EMC2302) {
         return EMC2302_get_fan2_speed();
+    }
+    if (DEVICE_CONFIG->EMC2302_LV07) {
+        return EMC2302_LV07_get_fan_speed(1);
     }
     return 0;
 }

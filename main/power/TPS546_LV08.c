@@ -24,7 +24,7 @@
 #define NACK_VALUE     0x1
 #define MAX_BLOCK_LEN  32
 
-static const char *TAG = "TPS546";
+static const char *TAG = "TPS546_LV08";
 
 static uint8_t DEVICE_ID_TPS546D24A[] = {0x54, 0x49, 0x54, 0x6D, 0x24, 0x41};
 static uint8_t DEVICE_ID_TPS546D24S[] = {0x54, 0x49, 0x54, 0x6D, 0x24, 0x62};
