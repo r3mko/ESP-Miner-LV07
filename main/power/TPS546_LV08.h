@@ -212,7 +212,7 @@ esp_err_t TPS546_LV08_check_status(tps546_t *vreg, GlobalState * GLOBAL_STATE);
 esp_err_t TPS546_LV08_clear_faults(tps546_t *vreg);
 
 const char* TPS546_LV08_get_error_message(void); //Get the current TPS error message
-void TPS546_LV08_log_snapshot(const TPS546_LV08_StatusSnapshot *s);
+void TPS546_LV08_log_snapshot(tps546_t *vreg, const TPS546_LV08_StatusSnapshot *s);
 esp_err_t TPS546_LV08_snapshot_status(tps546_t *vreg, TPS546_LV08_StatusSnapshot *s);
 
 #endif /* TPS546_LV08_H_ */
