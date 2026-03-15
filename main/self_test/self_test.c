@@ -191,7 +191,7 @@ esp_err_t init_voltage_regulator(GlobalState * GLOBAL_STATE)
 {
     ESP_RETURN_ON_ERROR(VCORE_init(GLOBAL_STATE), TAG, "VCORE init failed!");
 
-    ESP_RETURN_ON_ERROR(VCORE_set_voltage(GLOBAL_STATE, 1.150), TAG, "VCORE set voltage failed!");
+    ESP_RETURN_ON_ERROR(VCORE_set_voltage(GLOBAL_STATE, 1.180), TAG, "VCORE set voltage failed!");
 
     return ESP_OK;
 }
