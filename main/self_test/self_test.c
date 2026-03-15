@@ -191,7 +191,7 @@ esp_err_t init_voltage_regulator(GlobalState * GLOBAL_STATE)
 {
     ESP_RETURN_ON_ERROR(VCORE_init(GLOBAL_STATE), TAG, "VCORE init failed!");
 
-    ESP_RETURN_ON_ERROR(VCORE_set_voltage(GLOBAL_STATE, 1.150), TAG, "VCORE set voltage failed!");
+    ESP_RETURN_ON_ERROR(VCORE_set_voltage(GLOBAL_STATE, 1.180), TAG, "VCORE set voltage failed!");
 
     return ESP_OK;
 }
@@ -501,10 +501,15 @@ bool self_test(void * pvParameters)
 
     vTaskDelay(10 / portTICK_PERIOD_MS);
 
+    float test_percentage_target = GLOBAL_STATE->DEVICE_CONFIG.family.asic.hashrate_test_percentage_target;
+    if (GLOBAL_STATE->DEVICE_CONFIG.family.id == LV08) {
+        test_percentage_target = 0.65f;
+    }
+
     float expected_hashrate_mhs = GLOBAL_STATE->POWER_MANAGEMENT_MODULE.frequency_value *
                                   GLOBAL_STATE->DEVICE_CONFIG.family.asic.small_core_count *
                                   GLOBAL_STATE->DEVICE_CONFIG.family.asic_count / 1000.0f *
-                                  GLOBAL_STATE->DEVICE_CONFIG.family.asic.hashrate_test_percentage_target;
+                                  test_percentage_target;
 
     ESP_LOGI(TAG, "Hashrate: %.2f Gh/s, Expected: %.2f Gh/s", hashrate, expected_hashrate_mhs);
 

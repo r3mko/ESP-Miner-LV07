@@ -38,6 +38,7 @@ SRCS
     "./thermal/thermal.c"
     "./thermal/PID.c"
     "./power/TPS546.c"
+    "./power/TPS546_LV08.c"
     "./power/DS4432U.c"
     "./power/INA260.c"
     "./power/power.c"
