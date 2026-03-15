@@ -337,9 +337,10 @@
 
                 <div class="mb-3">
                     <h6 class="flex justify-content-between mb-1" tooltipPosition="top"
-                            pTooltip="{{info.fan2rpm > 0 ? 'Fan 1: ' : ''}}{{info.fanrpm}} RPM{{info.fan2rpm > 0 ? '<br>Fan 2: ' + info.fan2rpm + ' RPM' : ''}}">
+                            [pTooltip]="info.fan2rpm >= 500 ? 'Fan 1: ' + info.fanrpm + ' RPM<br>Fan 2: ' + info.fan2rpm + ' RPM' : info.fanrpm + ' RPM'"
+                            [escape]="false">
 
-                        <ng-container *ngIf="info.fan2rpm > 0; else singleFan">
+                        <ng-container *ngIf="info.fan2rpm >= 500; else singleFan">
                             Fan Speeds
                         </ng-container>
                         <ng-template #singleFan>
