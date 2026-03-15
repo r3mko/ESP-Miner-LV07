@@ -501,10 +501,15 @@ bool self_test(void * pvParameters)
 
     vTaskDelay(10 / portTICK_PERIOD_MS);
 
+    float test_percentage_target = GLOBAL_STATE->DEVICE_CONFIG.family.asic.hashrate_test_percentage_target;
+    if (GLOBAL_STATE->DEVICE_CONFIG.family.id == LV08) {
+        test_percentage_target = 0.65f;
+    }
+
     float expected_hashrate_mhs = GLOBAL_STATE->POWER_MANAGEMENT_MODULE.frequency_value *
                                   GLOBAL_STATE->DEVICE_CONFIG.family.asic.small_core_count *
                                   GLOBAL_STATE->DEVICE_CONFIG.family.asic_count / 1000.0f *
-                                  GLOBAL_STATE->DEVICE_CONFIG.family.asic.hashrate_test_percentage_target;
+                                  test_percentage_target;
 
     ESP_LOGI(TAG, "Hashrate: %.2f Gh/s, Expected: %.2f Gh/s", hashrate, expected_hashrate_mhs);
 
