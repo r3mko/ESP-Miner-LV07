@@ -73,6 +73,7 @@ typedef struct {
     uint8_t emc_beta_compensation;
     uint8_t TMP1075_A;
     uint8_t TMP1075_B;
+    bool temp_flip;
     int8_t temp_offset;
     bool DS4432U : 1;
     bool INA260  : 1;
@@ -158,7 +159,7 @@ static const DeviceConfig default_configs[] = {
     { .board_version = "650",  .family = FAMILY_GAMMA_DUO,   .EMC2101 = true, .emc_ideality_factor = 0x24, .emc_beta_compensation = 0x00,                     .TPS546 = true,                                                           .power_consumption_target = 35,  },
     { .board_version = "701",  .family = FAMILY_SUPRA_HEX,   .EMC2302 = true, .TMP1075 = true,                                            .temp_offset = 10,  .TPS546 = true,                                                           .power_consumption_target = 90,  },
     { .board_version = "702",  .family = FAMILY_SUPRA_HEX,   .EMC2302 = true, .TMP1075 = true,                                            .temp_offset = 10,  .TPS546 = true,                                                           .power_consumption_target = 90,  },
-    { .board_version = "801",  .family = FAMILY_GAMMA_TURBO, .EMC2103 = true,                                                             .temp_offset = 0,   .TPS546 = true,                                                           .power_consumption_target = 36,  },
+    { .board_version = "801",  .family = FAMILY_GAMMA_TURBO, .EMC2103 = true,                                          .temp_flip = true, .temp_offset = 0,   .TPS546 = true,                                                           .power_consumption_target = 36,  },
 };
 
 esp_err_t device_config_init(void * pvParameters);
