@@ -146,6 +146,7 @@ typedef struct
 
     bool ASIC_initalized;
     bool psram_is_available;
+    bool filesystem_is_available;
 
     int block_height;
     char scriptsig[128];
