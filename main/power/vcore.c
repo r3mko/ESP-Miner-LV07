@@ -178,6 +178,11 @@ esp_err_t VCORE_set_voltage(GlobalState * GLOBAL_STATE, float core_voltage)
 {
     ESP_LOGI(TAG, "Set ASIC voltage = %.3fV", core_voltage);
 
+    // Enable/disable the ASIC power enable GPIO before touching the regulator
+    if (GLOBAL_STATE->DEVICE_CONFIG.asic_enable) {
+        gpio_set_level(GPIO_ASIC_ENABLE, core_voltage == 0.0f ? 1 : 0);
+    }
+
     if (GLOBAL_STATE->DEVICE_CONFIG.DS4432U) {
         if (core_voltage != 0.0f) {
             ESP_RETURN_ON_ERROR(DS4432U_set_voltage(core_voltage), TAG, "DS4432U set voltage failed!");
@@ -198,9 +203,6 @@ esp_err_t VCORE_set_voltage(GlobalState * GLOBAL_STATE, float core_voltage)
         if (res_vreg_0 != ESP_OK) return res_vreg_0;
         if (res_vreg_1 != ESP_OK) return res_vreg_1;
         if (res_vreg_2 != ESP_OK) return res_vreg_2;
-    }
-    if (core_voltage == 0.0f && GLOBAL_STATE->DEVICE_CONFIG.asic_enable) {
-        gpio_set_level(GPIO_ASIC_ENABLE, 1);
     }
 
     return ESP_OK;
