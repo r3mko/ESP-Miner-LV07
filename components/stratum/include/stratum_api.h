@@ -67,7 +67,7 @@ typedef struct
     // mining.notify
     mining_notify *mining_notification;
     // mining.set_difficulty
-    uint32_t new_difficulty;
+    double new_difficulty;
     // mining.set_version_mask
     uint32_t version_mask;
     // result
