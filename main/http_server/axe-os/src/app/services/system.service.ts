@@ -362,16 +362,10 @@ export class SystemApiService {
   }
 
   public performOTAUpdate(file: File | Blob): Observable<HttpEvent<string>> {
-    if (environment.production && this.api) {
-      return from(this.api.invoke$Response(functions.updateFirmware, { body: file }));
-    }
     return this.otaUpdate(file, '/api/system/OTA');
   }
 
   public performWWWOTAUpdate(file: File | Blob): Observable<HttpEvent<string>> {
-    if (environment.production && this.api) {
-      return from(this.api.invoke$Response(functions.updateWebInterface, { body: file }));
-    }
     return this.otaUpdate(file, '/api/system/OTAWWW');
   }
 

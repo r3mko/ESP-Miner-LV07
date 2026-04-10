@@ -1270,9 +1270,15 @@ esp_err_t POST_WWW_update(httpd_req_t * req)
         return ESP_OK;
     }
 
-    // Erase the entire www partition before writing
-    ESP_ERROR_CHECK(esp_partition_erase_range(www_partition, 0, www_partition->size));
+    // Erase the entire www partition before writing, in chunks to prevent WDT timeout
+    size_t erase_size = 65536; // 64KB chunks
+    for (size_t offset = 0; offset < www_partition->size; offset += erase_size) {
+        size_t size_to_erase = MIN(erase_size, www_partition->size - offset);
+        ESP_ERROR_CHECK(esp_partition_erase_range(www_partition, offset, size_to_erase));
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
 
+    int chunks = 0;
     while (remaining > 0) {
         int recv_len = httpd_req_recv(req, buf, MIN(remaining, sizeof(buf)));
 
@@ -1295,6 +1301,11 @@ esp_err_t POST_WWW_update(httpd_req_t * req)
         snprintf(GLOBAL_STATE->SYSTEM_MODULE.firmware_update_status, 20, "Working (%d%%)", percentage);
 
         remaining -= recv_len;
+
+        chunks++;
+        if (chunks % 16 == 0) {
+            vTaskDelay(10 / portTICK_PERIOD_MS);
+        }
     }
     httpd_resp_set_type(req, "text/plain");
     httpd_resp_sendstr(req, "WWW update complete\n");
@@ -1334,6 +1345,7 @@ esp_err_t POST_OTA_update(httpd_req_t * req)
     const esp_partition_t * ota_partition = esp_ota_get_next_update_partition(NULL);
     ESP_ERROR_CHECK(esp_ota_begin(ota_partition, OTA_SIZE_UNKNOWN, &ota_handle));
 
+    int chunks = 0;
     while (remaining > 0) {
         int recv_len = httpd_req_recv(req, buf, MIN(remaining, sizeof(buf)));
 
@@ -1361,6 +1373,11 @@ esp_err_t POST_OTA_update(httpd_req_t * req)
         snprintf(GLOBAL_STATE->SYSTEM_MODULE.firmware_update_status, 20, "Working (%d%%)", percentage);
 
         remaining -= recv_len;
+
+        chunks++;
+        if (chunks % 16 == 0) {
+            vTaskDelay(10 / portTICK_PERIOD_MS);
+        }
     }
 
     // Validate and switch to new OTA image and reboot
