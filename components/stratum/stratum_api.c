@@ -439,12 +439,12 @@ void STRATUM_V1_free_mining_notify(mining_notify * params)
     free(params);
 }
 
-static void stamp_tx(int request_id)
+static void stamp_tx(int request_id, uint64_t timestamp_us)
 {
     if (request_id >= 1) {
         RequestTiming *timing = get_request_timing(request_id);
         if (timing) {
-            timing->timestamp_us = esp_timer_get_time();
+            timing->timestamp_us = timestamp_us;
             timing->tracking = true;
         }
     }
@@ -526,19 +526,26 @@ int STRATUM_V1_pong(esp_transport_handle_t transport, int message_id)
 /// @param ntime The hex-encoded time value use in the block header.
 /// @param nonce The hex-encoded nonce value to use in the block header.
 /// @param version_bits The hex-encoded version bits set by miner (BIP310).
+/// @param out_sent_time_us Pointer to store the time when the share was sent.
 int STRATUM_V1_submit_share(esp_transport_handle_t transport, int send_uid, const char * username, const char * job_id,
                             const char * extranonce_2, const uint32_t ntime,
-                            const uint32_t nonce, const uint32_t version_bits)
+                            const uint32_t nonce, const uint32_t version_bits, uint64_t *out_sent_time_us)
 {
     char submit_msg[BUFFER_SIZE];
     snprintf(submit_msg, sizeof(submit_msg),
         "{\"id\":%d,\"method\":\"mining.submit\",\"params\":[\"%s\",\"%s\",\"%s\",\"%08lx\",\"%08lx\",\"%08lx\"]}\n",
         send_uid, username, job_id, extranonce_2, ntime, nonce, version_bits);
-    debug_stratum_tx(submit_msg);
 
     int ret = esp_transport_write(transport, submit_msg, strlen(submit_msg), TRANSPORT_TIMEOUT_MS);
 
-    stamp_tx(send_uid);
+    uint64_t now = esp_timer_get_time();
+    if (out_sent_time_us) {
+        *out_sent_time_us = now;
+    }
+
+    debug_stratum_tx(submit_msg);
+    
+    stamp_tx(send_uid, now);
 
     return ret;
 }

@@ -19,6 +19,7 @@ SRCS
     "./bap/bap_handlers.c"
     "./bap/bap_subscription.c"
     "device_config.c"
+    "task_monitor.c"
     "./http_server/http_server.c"
     "./http_server/websocket.c"
     "./http_server/theme_api.c"

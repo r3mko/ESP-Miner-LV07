@@ -135,6 +135,7 @@ components:
         - fanspeed
         - temptarget
         - rotation
+        - cpuUsage
         - freeHeap
         - freeHeapInternal
         - freeHeapSpiram
@@ -273,6 +274,9 @@ components:
         rotation:
           type: number
           description: Screen rotation setting (0, 90, 180, 270)
+        cpuUsage:
+          type: number
+          description: CPU usage percentage
         freeHeap:
           type: number
           description: Available heap memory in bytes

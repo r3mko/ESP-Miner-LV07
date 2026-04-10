@@ -73,6 +73,8 @@ typedef struct
     bool pool_decode_coinbase_tx;
     bool fallback_pool_decode_coinbase_tx;
     float response_time;
+    float process_time;
+    float cpu_usage;
     bool use_fallback_stratum;
     uint16_t pool_is_tls;
     uint16_t fallback_pool_is_tls;
