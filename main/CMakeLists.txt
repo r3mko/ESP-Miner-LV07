@@ -3,6 +3,7 @@ SRCS
     "adc.c"
     "i2c_bitaxe.c"
     "main.c"
+    "log_buffer.c"
     "nvs_config.c"
     "display.c"
     "screen.c"
@@ -76,6 +77,7 @@ PRIV_REQUIRES
     "vfs"
     "esp_driver_i2c"
     "tcp_transport"
+    "esp_mm"
 
 EMBED_FILES "http_server/recovery_page.html"
 )
