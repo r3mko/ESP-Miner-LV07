@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, Input, OnDestroy } from '@angular/core';
+import { Component, OnInit, ViewChild, Input, OnDestroy, ElementRef, HostListener } from '@angular/core';
 import { interval, map, Observable, shareReplay, startWith, Subscription, switchMap, tap, first, Subject, takeUntil, BehaviorSubject, filter, catchError, of, combineLatest } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, FormGroup } from '@angular/forms';
@@ -20,6 +20,8 @@ import { eChartLabel } from 'src/models/enum/eChartLabel';
 import { chartLabelValue } from 'src/models/enum/eChartLabel';
 import { chartLabelKey } from 'src/models/enum/eChartLabel';
 import { LocalStorageService } from 'src/app/local-storage.service';
+import { GridStack, GridItemHTMLElement } from 'gridstack';
+import { DashboardEditService, WidgetDef } from 'src/app/services/dashboard-edit.service';
 
 type PoolLabel = 'Primary' | 'Fallback';
 type MessageType =
@@ -44,6 +46,22 @@ interface ISystemInfoError {
 }
 
 const HOME_CHART_DATA_SOURCES = 'HOME_CHART_DATA_SOURCES';
+const DASHBOARD_LAYOUT_KEY = 'DASHBOARD_LAYOUT_V1';
+const HIDDEN_WIDGETS_KEY = 'DASHBOARD_HIDDEN_WIDGETS';
+
+const WIDGET_DEFAULTS: WidgetDef[] = [
+  { id: 'hashrate',    label: 'Hashrate',            x: 0, y: 0,  w: 3,  h: 5,  minW: 2, minH: 4 },
+  { id: 'efficiency',  label: 'Efficiency',          x: 3, y: 0,  w: 3,  h: 5,  minW: 2, minH: 4 },
+  { id: 'shares',      label: 'Shares',              x: 6, y: 0,  w: 3,  h: 5,  minW: 2, minH: 4 },
+  { id: 'bestdiff',    label: 'Best Difficulty',     x: 9, y: 0,  w: 3,  h: 5,  minW: 2, minH: 4 },
+  { id: 'chart',       label: 'Chart',               x: 0, y: 5,   w: 12, h: 21, minW: 4, minH: 8 },
+  { id: 'power',       label: 'Power',               x: 0, y: 26,  w: 4,  h: 7,  minW: 2, minH: 5 },
+  { id: 'heat',        label: 'Heat',                x: 4, y: 26,  w: 4,  h: 7,  minW: 2, minH: 5 },
+  { id: 'fan',         label: 'Fan',                 x: 8, y: 26,  w: 4,  h: 7,  minW: 2, minH: 5 },
+  { id: 'pool',        label: 'Pool',                x: 0, y: 33,  w: 4,  h: 6,  minW: 2, minH: 4 },
+  { id: 'blockheader', label: 'Block Header',        x: 4, y: 33,  w: 4,  h: 6,  minW: 2, minH: 4 },
+  { id: 'registers',   label: 'Hashrate Registers',  x: 8, y: 33,  w: 4,  h: 6,  minW: 2, minH: 4 },
+];
 
 @Component({
   selector: 'app-home',
@@ -93,9 +111,25 @@ export class HomeComponent implements OnInit, OnDestroy {
   @ViewChild('chart')
   private chart?: UIChart
 
+  private gridStackEl?: ElementRef<HTMLElement>;
+  @ViewChild('gridStack', { static: false })
+  set gridStackRef(el: ElementRef<HTMLElement>) {
+    if (el && !this.grid) {
+      this.gridStackEl = el;
+      this.initGridStack();
+    }
+  }
+  private grid!: GridStack;
+  public editMode = false;
+  public widgetDefs = WIDGET_DEFAULTS;
+  public hiddenWidgets = new Set<string>();
+  private stashedWidgets = new Map<string, HTMLElement>();
+
   private pageDefaultTitle: string = '';
   private destroy$ = new Subject<void>();
   private infoSubscription?: Subscription;
+  private liveDataStarted = false;
+  private resizeTimer: any;
   public form!: FormGroup;
 
   @Input() uri = '';
@@ -109,12 +143,34 @@ export class HomeComponent implements OnInit, OnDestroy {
     private loadingService: LoadingService,
     private toastr: ToastrService,
     private shareRejectReasonsService: ShareRejectionExplanationService,
-    private storageService: LocalStorageService
+    private storageService: LocalStorageService,
+    private dashboardEditService: DashboardEditService
   ) {
     this.initializeChart();
   }
 
   ngOnInit(): void {
+    this.dashboardEditService.widgetDefs = this.widgetDefs;
+    this.dashboardEditService.isActive$.next(true);
+
+    this.dashboardEditService.editMode$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(mode => {
+        this.editMode = mode;
+        if (this.grid) {
+          this.grid.enableMove(mode);
+          this.grid.enableResize(mode);
+        }
+      });
+
+    this.dashboardEditService.resetRequested$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.resetLayout());
+
+    this.dashboardEditService.toggleWidgetRequested$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(id => this.toggleWidgetVisibility(id));
+
     this.themeService.getThemeSettings()
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
@@ -133,15 +189,137 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.form = this.fb.group(JSON.parse(dataSources));
 
     this.form.valueChanges.subscribe(() => {
-      this.updateSystem();
+      this.storageService.setItem(HOME_CHART_DATA_SOURCES, JSON.stringify(this.form.getRawValue()));
+      this.infoSubscription?.unsubscribe();
+      this.clearDataPoints();
+      this.loadPreviousData();
     })
 
     this.loadPreviousData();
   }
 
+  private getCellHeight(): number {
+    if (window.innerWidth < 768) {
+      return 50; // mobile: large enough for card content, prevents scrollbars
+    }
+    return Math.max(40, Math.round(window.innerHeight * 0.02)); // desktop: scales on large monitors
+  }
+
+  @HostListener('window:resize')
+  onWindowResize() {
+    clearTimeout(this.resizeTimer);
+    this.resizeTimer = setTimeout(() => {
+      this.grid?.cellHeight(this.getCellHeight());
+      this.chart?.chart?.resize();
+    }, 200);
+  }
+
   ngOnDestroy() {
+    clearTimeout(this.resizeTimer);
+    this.dashboardEditService.isActive$.next(false);
+    this.dashboardEditService.editMode$.next(false);
     this.destroy$.next();
     this.destroy$.complete();
+    this.grid?.destroy(false);
+  }
+
+  private initGridStack(): void {
+    // Load hidden widgets before grid init
+    const savedHidden = this.storageService.getObject(HIDDEN_WIDGETS_KEY);
+    if (Array.isArray(savedHidden)) {
+      this.hiddenWidgets = new Set(savedHidden);
+    }
+    this.dashboardEditService.hiddenWidgets = new Set(this.hiddenWidgets);
+
+    // Stash hidden items out of the container before gridstack initializes
+    const container = this.gridStackEl!.nativeElement;
+    this.hiddenWidgets.forEach(id => {
+      const el = container.querySelector(`[gs-id="${id}"]`) as HTMLElement;
+      if (el) {
+        el.remove();
+        this.stashedWidgets.set(id, el);
+      }
+    });
+
+    this.grid = GridStack.init({
+      column: 12,
+      cellHeight: this.getCellHeight(),
+      margin: 8,
+      float: false,
+      disableResize: true,
+      disableDrag: true,
+      animate: true,
+      columnOpts: {
+        breakpointForWindow: true,
+        breakpoints: [
+          { w: 768, c: 1 },
+          { w: 1200, c: 6 },
+        ],
+        layout: 'list',
+      },
+    }, this.gridStackEl!.nativeElement);
+
+    const savedLayout = this.storageService.getObject(DASHBOARD_LAYOUT_KEY);
+    this.grid.load(savedLayout ?? WIDGET_DEFAULTS);
+
+    setTimeout(() => this.chart?.chart?.resize(), 100);
+
+    this.grid.on('change', () => {
+      this.saveLayout();
+    });
+
+    this.grid.on('resizestop', (_event: Event, el: GridItemHTMLElement) => {
+      if (el.gridstackNode?.id === 'chart') {
+        setTimeout(() => this.chart?.chart?.resize(), 100);
+      }
+    });
+  }
+
+  private saveLayout(): void {
+    const layout = this.grid.save(false);
+    this.storageService.setObject(DASHBOARD_LAYOUT_KEY, layout as object);
+  }
+
+  public toggleEditMode(): void {
+    this.dashboardEditService.toggleEditMode();
+  }
+
+  public resetLayout(): void {
+    localStorage.removeItem(DASHBOARD_LAYOUT_KEY);
+    localStorage.removeItem(HIDDEN_WIDGETS_KEY);
+    window.location.reload();
+  }
+
+  public isWidgetVisible(id: string): boolean {
+    return !this.hiddenWidgets.has(id);
+  }
+
+  public toggleWidgetVisibility(id: string): void {
+    if (this.hiddenWidgets.has(id)) {
+      // Show widget — restore stashed DOM element
+      this.hiddenWidgets.delete(id);
+      const stashed = this.stashedWidgets.get(id);
+      if (stashed) {
+        this.stashedWidgets.delete(id);
+        this.grid.addWidget(stashed);
+      }
+    } else {
+      // Hide widget — remove from grid and stash the DOM element
+      const el = this.gridStackEl!.nativeElement.querySelector(`[gs-id="${id}"]`) as GridItemHTMLElement;
+      if (el) {
+        this.grid.removeWidget(el, false);
+        el.remove();
+        this.stashedWidgets.set(id, el);
+      }
+      this.hiddenWidgets.add(id);
+    }
+    this.saveHiddenWidgets();
+    this.saveLayout();
+  }
+
+  private saveHiddenWidgets(): void {
+    this.storageService.setObject(HIDDEN_WIDGETS_KEY, [...this.hiddenWidgets]);
+    this.dashboardEditService.hiddenWidgets = new Set(this.hiddenWidgets);
   }
 
   private updateChartColors() {
@@ -232,8 +410,18 @@ export class HomeComponent implements OnInit, OnDestroy {
     };
 
     this.chartOptions = {
+      responsive: true,
       animation: false,
       maintainAspectRatio: false,
+      onResize: (chart: any, size: { width: number; height: number }) => {
+        const fontSize = Math.max(8, Math.min(12, Math.round(size.width / 50)));
+        const tickFont = { size: fontSize };
+        chart.options.scales.x.ticks.font = tickFont;
+        chart.options.scales.y.ticks.font = tickFont;
+        chart.options.scales.y2.ticks.font = tickFont;
+        // Hide x-axis labels when chart is very short to reclaim space
+        chart.options.scales.x.ticks.display = size.height > 100;
+      },
       plugins: {
         legend: {
           display: false
@@ -367,8 +555,11 @@ export class HomeComponent implements OnInit, OnDestroy {
           }
 
           this.limitDataPoints();
-        }),
-        this.startGetLiveData();
+        });
+        if (!this.liveDataStarted) {
+          this.liveDataStarted = true;
+          this.startGetLiveData();
+        }
       });
   }
 
