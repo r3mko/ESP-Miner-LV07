@@ -48,19 +48,20 @@ interface ISystemInfoError {
 const HOME_CHART_DATA_SOURCES = 'HOME_CHART_DATA_SOURCES';
 const DASHBOARD_LAYOUT_KEY = 'DASHBOARD_LAYOUT_V1';
 const HIDDEN_WIDGETS_KEY = 'DASHBOARD_HIDDEN_WIDGETS';
+const DEFAULT_CELL_HEIGHT = 40;
 
 const WIDGET_DEFAULTS: WidgetDef[] = [
-  { id: 'hashrate',    label: 'Hashrate',            x: 0, y: 0,  w: 3,  h: 5,  minW: 2, minH: 4 },
-  { id: 'efficiency',  label: 'Efficiency',          x: 3, y: 0,  w: 3,  h: 5,  minW: 2, minH: 4 },
-  { id: 'shares',      label: 'Shares',              x: 6, y: 0,  w: 3,  h: 5,  minW: 2, minH: 4 },
-  { id: 'bestdiff',    label: 'Best Difficulty',     x: 9, y: 0,  w: 3,  h: 5,  minW: 2, minH: 4 },
-  { id: 'chart',       label: 'Chart',               x: 0, y: 5,   w: 12, h: 21, minW: 4, minH: 8 },
-  { id: 'power',       label: 'Power',               x: 0, y: 26,  w: 4,  h: 7,  minW: 2, minH: 5 },
-  { id: 'heat',        label: 'Heat',                x: 4, y: 26,  w: 4,  h: 7,  minW: 2, minH: 5 },
-  { id: 'fan',         label: 'Fan',                 x: 8, y: 26,  w: 4,  h: 7,  minW: 2, minH: 5 },
-  { id: 'pool',        label: 'Pool',                x: 0, y: 33,  w: 4,  h: 6,  minW: 2, minH: 4 },
-  { id: 'blockheader', label: 'Block Header',        x: 4, y: 33,  w: 4,  h: 6,  minW: 2, minH: 4 },
-  { id: 'registers',   label: 'Hashrate Registers',  x: 8, y: 33,  w: 4,  h: 6,  minW: 2, minH: 4 },
+  { id: 'hashrate',    label: 'Hashrate',            x: 0, y: 0,   w: 3,  h: 5,  minW: 2, minH: 3 },
+  { id: 'efficiency',  label: 'Efficiency',          x: 3, y: 0,   w: 3,  h: 5,  minW: 2, minH: 3 },
+  { id: 'shares',      label: 'Shares',              x: 6, y: 0,   w: 3,  h: 5,  minW: 2, minH: 3 },
+  { id: 'bestdiff',    label: 'Best Difficulty',     x: 9, y: 0,   w: 3,  h: 5,  minW: 2, minH: 3 },
+  { id: 'chart',       label: 'Chart',               x: 0, y: 5,   w: 12, h: 0,  minW: 4, minH: 8 },
+  { id: 'power',       label: 'Power',               x: 0, y: 5,   w: 4,  h: 7,  minW: 2, minH: 3 },
+  { id: 'heat',        label: 'Heat',                x: 4, y: 5,   w: 4,  h: 7,  minW: 2, minH: 3 },
+  { id: 'fan',         label: 'Fan',                 x: 8, y: 5,   w: 4,  h: 7,  minW: 2, minH: 3 },
+  { id: 'pool',        label: 'Pool',                x: 0, y: 12,  w: 4,  h: 6,  minW: 2, minH: 3 },
+  { id: 'blockheader', label: 'Block Header',        x: 4, y: 12,  w: 4,  h: 6,  minW: 2, minH: 3 },
+  { id: 'registers',   label: 'Hashrate Registers',  x: 8, y: 12,  w: 4,  h: 6,  minW: 2, minH: 3 },
 ];
 
 @Component({
@@ -198,19 +199,12 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.loadPreviousData();
   }
 
-  private getCellHeight(): number {
-    if (window.innerWidth < 768) {
-      return 50; // mobile: large enough for card content, prevents scrollbars
-    }
-    return Math.max(40, Math.round(window.innerHeight * 0.02)); // desktop: scales on large monitors
-  }
-
   @HostListener('window:resize')
   onWindowResize() {
     clearTimeout(this.resizeTimer);
     this.resizeTimer = setTimeout(() => {
-      this.grid?.cellHeight(this.getCellHeight());
       this.chart?.chart?.resize();
+      this.grid?.compact();
     }, 200);
   }
 
@@ -243,7 +237,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     this.grid = GridStack.init({
       column: 12,
-      cellHeight: this.getCellHeight(),
+      cellHeight: DEFAULT_CELL_HEIGHT,
       margin: 8,
       float: false,
       disableResize: true,
@@ -260,7 +254,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     }, this.gridStackEl!.nativeElement);
 
     const savedLayout = this.storageService.getObject(DASHBOARD_LAYOUT_KEY);
-    this.grid.load(savedLayout ?? WIDGET_DEFAULTS);
+    this.grid.load(savedLayout ?? this.getInitialLayout());
 
     setTimeout(() => this.chart?.chart?.resize(), 100);
 
@@ -270,6 +264,10 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     this.grid.on('resizestop', (_event: Event, el: GridItemHTMLElement) => {
       if (el.gridstackNode?.id === 'chart') {
+        const isMobile = window.innerWidth < 768;
+        if (!isMobile && el.gridstackNode.h) {
+           el.dataset['desktopH'] = String(el.gridstackNode.h);
+        }
         setTimeout(() => this.chart?.chart?.resize(), 100);
       }
     });
@@ -287,7 +285,29 @@ export class HomeComponent implements OnInit, OnDestroy {
   public resetLayout(): void {
     localStorage.removeItem(DASHBOARD_LAYOUT_KEY);
     localStorage.removeItem(HIDDEN_WIDGETS_KEY);
-    window.location.reload();
+    this.grid.load(this.getInitialLayout());
+  }
+
+  private getInitialLayout(): WidgetDef[] {
+    const chartDef = WIDGET_DEFAULTS.find(d => d.id === 'chart');
+    if (!chartDef) return WIDGET_DEFAULTS;
+
+    // The old layout set the chart height to 40vh. In gridstack, you need to set the height of 
+    // the card, so there's 100px to compensate for the dropdowns and padding.
+    const CHART_CHROME_PX = 100;
+    const targetPx = (window.innerHeight * 0.40) + CHART_CHROME_PX;
+    const chartH = Math.max(chartDef.minH ?? 8, Math.round(targetPx / DEFAULT_CELL_HEIGHT));
+
+    return WIDGET_DEFAULTS.map(widget => {
+      const w = { ...widget };
+      if (w.id === chartDef.id) {
+        w.h = chartH;
+      } else if (w.y >= chartDef.y) {
+        // Shift everything at or below the chart position
+        w.y += chartH;
+      }
+      return w;
+    });
   }
 
   public isWidgetVisible(id: string): boolean {
