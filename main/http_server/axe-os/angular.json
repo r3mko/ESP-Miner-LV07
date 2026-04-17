@@ -18,7 +18,8 @@
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
             "allowedCommonJsDependencies": [
-              "moment"
+              "moment",
+              "gridstack"
             ],
             "outputPath": "dist/axe-os",
             "index": "src/index.html",
@@ -35,7 +36,8 @@
             ],
             "styles": [
               "src/styles.scss",
-              "node_modules/ngx-toastr/toastr.css"
+              "node_modules/ngx-toastr/toastr.css",
+              "node_modules/gridstack/dist/gridstack.min.css"
             ],
             "scripts": []
           },

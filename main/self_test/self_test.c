@@ -317,7 +317,7 @@ void self_test_task(void * pvParameters)
     }
 
     Thermal_set_fan_percent(&GLOBAL_STATE->DEVICE_CONFIG, 0.1f);
-    while (asic_temp < 40.0f)
+    while (asic_temp < 50.0f)
     {
         vTaskDelay(500 / portTICK_PERIOD_MS);
         asic_temp = Thermal_get_chip_temp(GLOBAL_STATE);
