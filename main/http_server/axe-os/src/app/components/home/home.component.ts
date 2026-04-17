@@ -33,7 +33,8 @@ type MessageType =
   | 'FALLBACK_STRATUM'
   | 'VERSION_MISMATCH'
   | 'NOT_SOLO_MINING'
-  | 'NO_MINING_REWARD';
+  | 'NO_MINING_REWARD'
+  | 'HARDWARE_FAULT';
 
 interface ISystemMessage {
   type: MessageType;
@@ -872,6 +873,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     updateMessage(!!(info as any).miningPaused, 'MINING_PAUSED', 'warn', 'Mining is paused');
     updateMessage(info.overheat_mode === 1, 'DEVICE_OVERHEAT', 'error', 'Device has overheated - See settings');
     updateMessage(!!info.power_fault, 'POWER_FAULT', 'error', `${info.power_fault} Check your Power Supply.`);
+    updateMessage(!!info.hardware_fault, 'HARDWARE_FAULT', 'error', `${info.hardware_fault}`);
     updateMessage(!info.frequency || info.frequency < 400, 'FREQUENCY_LOW', 'warn', 'Device frequency is set low - See settings');
     updateMessage(!!info.isUsingFallbackStratum, 'FALLBACK_STRATUM', 'warn', 'Using fallback pool - Share stats reset. Check Pool Settings and / or reboot Device.');
     updateMessage(info.version !== info.axeOSVersion, 'VERSION_MISMATCH', 'warn', `Firmware (${info.version}) and AxeOS (${info.axeOSVersion}) versions do not match. Please make sure to update both www.bin and esp-miner.bin.`);
