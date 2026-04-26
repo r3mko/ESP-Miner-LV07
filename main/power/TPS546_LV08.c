@@ -716,7 +716,7 @@ float TPS546_LV08_get_temperature(tps546_t *vreg)
     float temp;
 
     if (smb_read_word(vreg, PMBUS_READ_TEMPERATURE_1, &value) != ESP_OK) {
-        ESP_LOGE(TAG, "Could not read temperature");
+        ESP_LOGE(vreg->TAG, "Could not read temperature");
         return last_temp;
     }
     
