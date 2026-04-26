@@ -24,19 +24,19 @@ void Power_get_output(GlobalState * GLOBAL_STATE, float * power_out, float * cur
         tps546_t *v1 = VCORE_get_vreg(1);
         tps546_t *v2 = VCORE_get_vreg(2);
 
-        float i0 = TPS546_LV08_get_iout(v0) * 1000.0f;
-        float i1 = TPS546_LV08_get_iout(v1) * 1000.0f;
-        float i2 = TPS546_LV08_get_iout(v2) * 1000.0f;
+        float i0 = TPS546_LV08_get_iout(v0);
+        float i1 = TPS546_LV08_get_iout(v1);
+        float i2 = TPS546_LV08_get_iout(v2);
 
-        *current_out = (i0 + i1 + i2) / 3.0f;
+        cur_val = ((i0 + i1 + i2) / 3.0f) * 1000.0f;
 
-        // calculate regulator power (in milliwatts)
-        float p0 = TPS546_LV08_get_vout(v0) * i0 / 1000.0f;
-        float p1 = TPS546_LV08_get_vout(v1) * i1 / 1000.0f;
-        float p2 = TPS546_LV08_get_vout(v2) * i2 / 1000.0f;
+        // calculate regulator power (in watts)
+        float p0 = TPS546_LV08_get_vout(v0) * i0;
+        float p1 = TPS546_LV08_get_vout(v1) * i1;
+        float p2 = TPS546_LV08_get_vout(v2) * i2;
 
         // The power reading from the TPS546 is only it's output power. So the rest of the Bitaxe power is not accounted for.
-        *power_out = p0 + p1 + p2 + GLOBAL_STATE->DEVICE_CONFIG.family.power_offset;
+        pow_val = p0 + p1 + p2 + GLOBAL_STATE->DEVICE_CONFIG.family.power_offset;
     }
     if (GLOBAL_STATE->DEVICE_CONFIG.INA260) {
         cur_val = INA260_read_current();
