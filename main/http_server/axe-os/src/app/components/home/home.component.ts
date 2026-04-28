@@ -221,12 +221,17 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.loadingService.loading$.next(true);
 
     let dataSources = this.storageService.getItem(HOME_CHART_DATA_SOURCES);
-    if (dataSources === null) {
-      dataSources = `{"chartY1Data":"${chartLabelKey(eChartLabel.hashrate)}",`;
-      dataSources += `"chartY2Data":"${chartLabelKey(eChartLabel.asicTemp)}"}`;
+    let parsedConfig: any = { chartY1Data: chartLabelKey(eChartLabel.hashrate), chartY2Data: chartLabelKey(eChartLabel.asicTemp) };
+    
+    if (dataSources !== null) {
+      try {
+        const stored = JSON.parse(dataSources);
+        if (stored.chartY1Data) parsedConfig.chartY1Data = stored.chartY1Data;
+        if (stored.chartY2Data) parsedConfig.chartY2Data = stored.chartY2Data;
+      } catch (e) { }
     }
 
-    this.form = this.fb.group(JSON.parse(dataSources));
+    this.form = this.fb.group(parsedConfig);
 
     this.form.valueChanges.subscribe(() => {
       this.storageService.setItem(HOME_CHART_DATA_SOURCES, JSON.stringify(this.form.getRawValue()));
@@ -1234,6 +1239,8 @@ export class HomeComponent implements OnInit, OnDestroy {
 
         return true;
       })
+      .filter(([key, ]) => key !== 'fanRpm' || info.fanrpm)
+      .filter(([key, ]) => key !== 'fan2Rpm' || info.fan2rpm)
       .map(([key, value]) => ({name: value, value: key}));
   }
 }

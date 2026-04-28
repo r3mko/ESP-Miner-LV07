@@ -47,6 +47,7 @@
 #include "system.h"
 #include "websocket.h"
 #include "log_buffer.h"
+#include "utils.h"
 
 static const char * TAG = "http_server";
 static const char * CORS_TAG = "CORS";
@@ -1112,8 +1113,10 @@ static esp_err_t GET_system_statistics(httpd_req_t * req)
     if (1 < bufLen) {
         char buf[bufLen];
         if (httpd_req_get_url_query_str(req, buf, bufLen) == ESP_OK) {
-            char columns[bufLen];
-            if (httpd_query_key_value(buf, "columns", columns, bufLen) == ESP_OK) {
+            char columns_enc[bufLen];
+            if (httpd_query_key_value(buf, "columns", columns_enc, bufLen) == ESP_OK) {
+                char columns[bufLen];
+                url_decode(columns, columns_enc);
                 char * param = strtok(columns, ",");
                 while (NULL != param) {
                     DataSource sourceParam = strToDataSource(param);
