@@ -46,6 +46,7 @@
 #include "http_server.h"
 #include "system.h"
 #include "websocket.h"
+#include "stratum_v2_task.h"
 #include "log_buffer.h"
 #include "utils.h"
 
@@ -159,9 +160,43 @@ static esp_err_t GET_system_logs(httpd_req_t *req)
 static GlobalState * GLOBAL_STATE;
 static httpd_handle_t server = NULL;
 
+// Protocol and channel-type are stored as u16 in NVS but exposed as strings via the REST API
+// so the frontend doesn't need to decode numeric enums.
+static const char * stratum_protocol_to_string(uint16_t v)
+{
+    return v == 1 ? "SV2" : "SV1";
+}
+
+static int stratum_protocol_from_string(const char *s, uint16_t *out)
+{
+    if (!s) return -1;
+    if (strcmp(s, "SV1") == 0) { *out = 0; return 0; }
+    if (strcmp(s, "SV2") == 0) { *out = 1; return 0; }
+    return -1;
+}
+
+// NVS storage uses the same numeric values as the SV2_CHANNEL_* enum in sv2_protocol.h:
+// 0 = SV2_CHANNEL_EXTENDED, 1 = SV2_CHANNEL_STANDARD. The string mapping must follow.
+static const char * sv2_channel_type_to_string(uint16_t v)
+{
+    return v == 1 ? "standard" : "extended";
+}
+
+static int sv2_channel_type_from_string(const char *s, uint16_t *out)
+{
+    if (!s) return -1;
+    if (strcmp(s, "extended") == 0) { *out = 0; return 0; }
+    if (strcmp(s, "standard") == 0) { *out = 1; return 0; }
+    return -1;
+}
+
 esp_err_t HTTP_send_json(httpd_req_t * req, const cJSON * item, int * prebuffer_len)
 {
     const char * response = cJSON_PrintBuffered(item, *prebuffer_len, true);
+    if (response == NULL) {
+        ESP_LOGE(TAG, "cJSON_PrintBuffered failed (free heap: %lu)", (unsigned long)esp_get_free_heap_size());
+        return httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Out of memory");
+    }
     int len = strlen(response);
     esp_err_t res = httpd_resp_send(req, response, len);
     if (len > *prebuffer_len) *prebuffer_len = len * 1.2;
@@ -531,6 +566,26 @@ bool check_settings_and_update(const cJSON * const root)
 {
     bool result = true;
 
+    // Validate the string-enum fields (handled outside the rest_name table).
+    struct {
+        const char *json_key;
+        int (*parse)(const char *, uint16_t *);
+    } string_enum_fields[] = {
+        { "stratumProtocol",              stratum_protocol_from_string },
+        { "fallbackStratumProtocol",      stratum_protocol_from_string },
+        { "stratumV2ChannelType",         sv2_channel_type_from_string },
+        { "fallbackStratumV2ChannelType", sv2_channel_type_from_string },
+    };
+    for (size_t i = 0; i < sizeof(string_enum_fields) / sizeof(string_enum_fields[0]); i++) {
+        cJSON *item = cJSON_GetObjectItem(root, string_enum_fields[i].json_key);
+        if (!item) continue;
+        uint16_t v;
+        if (!cJSON_IsString(item) || string_enum_fields[i].parse(item->valuestring, &v) != 0) {
+            ESP_LOGW(TAG, "Invalid value for '%s'", string_enum_fields[i].json_key);
+            result = false;
+        }
+    }
+
     for (NvsConfigKey key = 0; key < NVS_CONFIG_COUNT; key++) {
         Settings *setting = nvs_config_get_settings(key);
         if (!setting->rest_name) continue;
@@ -633,6 +688,29 @@ bool check_settings_and_update(const cJSON * const root)
                 case TYPE_FLOAT:
                     nvs_config_set_float(key, (float)item->valuedouble);
                     break;
+            }
+        }
+
+        // Special-case: protocol and channel-type are exposed as strings via the API
+        // (no rest_name in nvs_config table), parse to u16 here.
+        struct {
+            const char *json_key;
+            NvsConfigKey nvs_key;
+            int (*parse)(const char *, uint16_t *);
+        } string_enum_fields[] = {
+            { "stratumProtocol",              NVS_CONFIG_STRATUM_PROTOCOL,          stratum_protocol_from_string },
+            { "fallbackStratumProtocol",      NVS_CONFIG_FALLBACK_STRATUM_PROTOCOL, stratum_protocol_from_string },
+            { "stratumV2ChannelType",         NVS_CONFIG_SV2_CHANNEL_TYPE,          sv2_channel_type_from_string },
+            { "fallbackStratumV2ChannelType", NVS_CONFIG_FALLBACK_SV2_CHANNEL_TYPE, sv2_channel_type_from_string },
+        };
+        for (size_t i = 0; i < sizeof(string_enum_fields) / sizeof(string_enum_fields[0]); i++) {
+            cJSON *item = cJSON_GetObjectItem(root, string_enum_fields[i].json_key);
+            if (!item || !cJSON_IsString(item)) continue;
+            uint16_t v;
+            if (string_enum_fields[i].parse(item->valuestring, &v) == 0) {
+                nvs_config_set_u16(string_enum_fields[i].nvs_key, v);
+            } else {
+                ESP_LOGW(TAG, "Invalid value for %s: %s", string_enum_fields[i].json_key, item->valuestring);
             }
         }
     }
@@ -899,6 +977,8 @@ static esp_err_t GET_system_info(httpd_req_t * req)
     char * fallbackStratumUser = nvs_config_get_string(NVS_CONFIG_FALLBACK_STRATUM_USER);
     char * stratumCert = nvs_config_get_string(NVS_CONFIG_STRATUM_CERT);
     char * fallbackStratumCert = nvs_config_get_string(NVS_CONFIG_FALLBACK_STRATUM_CERT);
+    char * sv2AuthPubkey = nvs_config_get_string(NVS_CONFIG_SV2_AUTHORITY_PUBKEY);
+    char * fallbackSv2AuthPubkey = nvs_config_get_string(NVS_CONFIG_FALLBACK_SV2_AUTHORITY_PUBKEY);
     char * display = nvs_config_get_string(NVS_CONFIG_DISPLAY);
     float frequency = nvs_config_get_float(NVS_CONFIG_ASIC_FREQUENCY);
     
@@ -969,6 +1049,17 @@ static esp_err_t GET_system_info(httpd_req_t * req)
     cJSON_AddStringToObject(root, "ASICModel", GLOBAL_STATE->DEVICE_CONFIG.family.asic.name);
     cJSON_AddStringToObject(root, "stratumURL", stratumURL);
     cJSON_AddNumberToObject(root, "stratumPort", nvs_config_get_u16(NVS_CONFIG_STRATUM_PORT));
+    cJSON_AddStringToObject(root, "stratumProtocol",
+                            stratum_protocol_to_string(nvs_config_get_u16(NVS_CONFIG_STRATUM_PROTOCOL)));
+    const char *protocol_label = "SV1";
+    if (GLOBAL_STATE->stratum_protocol == STRATUM_V2) {
+        protocol_label = stratum_v2_is_extended_channel(GLOBAL_STATE)
+            ? "SV2 Extended Channel" : "SV2 Standard Channel";
+    }
+    cJSON_AddStringToObject(root, "activeProtocolLabel", protocol_label);
+    cJSON_AddStringToObject(root, "stratumV2AuthorityPubkey", sv2AuthPubkey);
+    cJSON_AddStringToObject(root, "stratumV2ChannelType",
+                            sv2_channel_type_to_string(nvs_config_get_u16(NVS_CONFIG_SV2_CHANNEL_TYPE)));
     cJSON_AddStringToObject(root, "stratumUser", stratumUser);
     cJSON_AddNumberToObject(root, "stratumSuggestedDifficulty", nvs_config_get_u16(NVS_CONFIG_STRATUM_DIFFICULTY));
     cJSON_AddNumberToObject(root, "stratumExtranonceSubscribe", nvs_config_get_bool(NVS_CONFIG_STRATUM_EXTRANONCE_SUBSCRIBE));
@@ -982,7 +1073,12 @@ static esp_err_t GET_system_info(httpd_req_t * req)
     cJSON_AddNumberToObject(root, "fallbackStratumExtranonceSubscribe", nvs_config_get_bool(NVS_CONFIG_FALLBACK_STRATUM_EXTRANONCE_SUBSCRIBE));
     cJSON_AddNumberToObject(root, "fallbackStratumTLS", nvs_config_get_u16(NVS_CONFIG_FALLBACK_STRATUM_TLS));
     cJSON_AddStringToObject(root, "fallbackStratumCert", fallbackStratumCert);
+    cJSON_AddStringToObject(root, "fallbackStratumProtocol",
+                            stratum_protocol_to_string(nvs_config_get_u16(NVS_CONFIG_FALLBACK_STRATUM_PROTOCOL)));
     cJSON_AddNumberToObject(root, "fallbackStratumDecodeCoinbase", nvs_config_get_bool(NVS_CONFIG_FALLBACK_STRATUM_DECODE_COINBASE_TX));
+    cJSON_AddStringToObject(root, "fallbackStratumV2AuthorityPubkey", fallbackSv2AuthPubkey);
+    cJSON_AddStringToObject(root, "fallbackStratumV2ChannelType",
+                            sv2_channel_type_to_string(nvs_config_get_u16(NVS_CONFIG_FALLBACK_SV2_CHANNEL_TYPE)));
     cJSON_AddFloatToObject(root, "responseTime", GLOBAL_STATE->SYSTEM_MODULE.response_time);
     cJSON_AddFloatToObject(root, "cpuUsage", GLOBAL_STATE->SYSTEM_MODULE.cpu_usage);
 
@@ -1020,6 +1116,10 @@ static esp_err_t GET_system_info(httpd_req_t * req)
         cJSON_AddStringToObject(root, "power_fault", VCORE_get_fault_string(GLOBAL_STATE));
     }
 
+    if (GLOBAL_STATE->network_nonce_diff > 0) {
+        cJSON_AddNumberToObject(root, "networkDifficulty", GLOBAL_STATE->network_nonce_diff);
+    }
+
     if (GLOBAL_STATE->SYSTEM_MODULE.hardware_fault) {
         cJSON_AddStringToObject(root, "hardware_fault", GLOBAL_STATE->SYSTEM_MODULE.hardware_fault_msg);
     }
@@ -1027,7 +1127,6 @@ static esp_err_t GET_system_info(httpd_req_t * req)
     if (GLOBAL_STATE->block_height > 0) {
         cJSON_AddNumberToObject(root, "blockHeight", GLOBAL_STATE->block_height);
         cJSON_AddStringToObject(root, "scriptsig", GLOBAL_STATE->scriptsig);
-        cJSON_AddNumberToObject(root, "networkDifficulty", GLOBAL_STATE->network_nonce_diff);
 
         cJSON *block_signals_array = cJSON_CreateArray();
         for (int i = 0; i < GLOBAL_STATE->block_signals_count; i++) {
@@ -1077,6 +1176,8 @@ static esp_err_t GET_system_info(httpd_req_t * req)
     free(fallbackStratumURL);
     free(stratumCert);
     free(fallbackStratumCert);
+    free(sv2AuthPubkey);
+    free(fallbackSv2AuthPubkey);
     free(stratumUser);
     free(fallbackStratumUser);
     free(display);
