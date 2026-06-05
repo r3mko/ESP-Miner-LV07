@@ -269,8 +269,8 @@ void STRATUM_V1_parse(StratumApiV1Message * message, const char * stratum_json)
         cJSON * error_json = cJSON_GetObjectItem(json, "error");
         cJSON * reject_reason_json = cJSON_GetObjectItem(json, "reject-reason");
 
-        // if the result is null, then it's a fail
-        if (result_json == NULL) {
+        // if the result is null and there is no error, then it's an unknown fail
+        if ((result_json == NULL || cJSON_IsNull(result_json)) && (error_json == NULL || cJSON_IsNull(error_json))) {
             message->response_success = false;
             message->error_str = strdup("unknown");
             
@@ -287,13 +287,16 @@ void STRATUM_V1_parse(StratumApiV1Message * message, const char * stratum_json)
                 if (len >= 2) {
                     cJSON * error_msg = cJSON_GetArrayItem(error_json, 1);
                     if (cJSON_IsString(error_msg)) {
-                        free(message->error_str);
                         message->error_str = strdup(cJSON_GetStringValue(error_msg));
                     }
                 }
             } else if (cJSON_IsString(error_json)) {
-                free(message->error_str);
                 message->error_str = strdup(cJSON_GetStringValue(error_json));
+            } else if (cJSON_IsObject(error_json)) {
+                cJSON * error_msg = cJSON_GetObjectItem(error_json, "message");
+                if (cJSON_IsString(error_msg)) {
+                    message->error_str = strdup(cJSON_GetStringValue(error_msg));
+                }
             }
             if (message->error_str == NULL) {
                 message->error_str = strdup("unknown");
@@ -311,10 +314,8 @@ void STRATUM_V1_parse(StratumApiV1Message * message, const char * stratum_json)
             } else {
                 message->response_success = false;
                 if (cJSON_IsString(reject_reason_json)) {
-                    free(message->error_str);
                     message->error_str = strdup(cJSON_GetStringValue(reject_reason_json));
                 } else if (cJSON_IsString(error_json)) {
-                    free(message->error_str);
                     message->error_str = strdup(cJSON_GetStringValue(error_json));
                 } else {
                     message->error_str = strdup("unknown");
