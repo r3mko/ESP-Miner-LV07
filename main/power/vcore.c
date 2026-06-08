@@ -1,4 +1,6 @@
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include <math.h>
 #include <stdio.h>
 
@@ -12,6 +14,8 @@
 
 #define GPIO_ASIC_ENABLE CONFIG_GPIO_ASIC_ENABLE
 #define GPIO_PLUG_SENSE CONFIG_GPIO_PLUG_SENSE
+
+#define TPS546_LV08_STARTUP_STAGGER_MS 50
 
 static const char *TAG = "vcore";
 
@@ -196,7 +200,9 @@ esp_err_t VCORE_set_voltage(GlobalState * GLOBAL_STATE, float core_voltage)
         uint16_t voltage_domains = GLOBAL_STATE->DEVICE_CONFIG.family.voltage_domains;
         float vout = core_voltage * voltage_domains;
         esp_err_t res_vreg_0 = TPS546_LV08_set_vout(&vreg_0, vout);
+        vTaskDelay(pdMS_TO_TICKS(TPS546_LV08_STARTUP_STAGGER_MS));
         esp_err_t res_vreg_1 = TPS546_LV08_set_vout(&vreg_1, vout);
+        vTaskDelay(pdMS_TO_TICKS(TPS546_LV08_STARTUP_STAGGER_MS));
         esp_err_t res_vreg_2 = TPS546_LV08_set_vout(&vreg_2, vout);
 
         // return the first non-ESP_OK
