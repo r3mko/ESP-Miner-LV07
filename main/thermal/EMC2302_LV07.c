@@ -36,31 +36,27 @@ esp_err_t EMC2302_LV07_set_fan_speed(uint8_t devicenum, float percent) {
 
 // Get fan speed
 uint16_t EMC2302_LV07_get_fan_speed(uint8_t devicenum) {
-    uint8_t tach_lsb = 0, tach_msb = 0;
-    uint16_t RPM;
-    uint8_t TACH_LSB_REG = EMC2302_LV07_TACH1_LSB + (devicenum * 0x10);
+    uint8_t tach_data[2] = {0};
     uint8_t TACH_MSB_REG = EMC2302_LV07_TACH1_MSB + (devicenum * 0x10);
-    esp_err_t err;
 
-    err = i2c_bitaxe_register_read(emc2302_lv07_dev_handle, TACH_LSB_REG, &tach_lsb, 1);
+    esp_err_t err = i2c_bitaxe_register_read(emc2302_lv07_dev_handle, TACH_MSB_REG, tach_data, 2);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to read fan speed LSB: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "Failed to read fan speed: %s", esp_err_to_name(err));
         return 0;
     }
 
-    err = i2c_bitaxe_register_read(emc2302_lv07_dev_handle, TACH_MSB_REG, &tach_msb, 1);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to read fan speed MSB: %s", esp_err_to_name(err));
+    uint16_t tach_counter = (tach_data[0] << 5) | (tach_data[1] >> 3);
+    
+    if (tach_counter == 0 || tach_counter == 0x1FFF) {
         return 0;
-    }    
+    }
 
-    RPM = (tach_msb << 5) + ((tach_lsb >> 3) & 0x1F);
-    RPM = EMC2302_LV07_FAN_RPM_NUMERATOR / RPM;
+    uint16_t rpm = EMC2302_LV07_FAN_RPM_NUMERATOR / tach_counter;
 
     // DEBUG: Get fan speed and config
     //
-    //ESP_LOGI(TAG, "Raw Fan Speed[%d] = %02X %02X", devicenum, tach_msb, tach_lsb);
-    //ESP_LOGI(TAG, "Fan Speed[%d] = %d RPM", devicenum, RPM);
+    //ESP_LOGI(TAG, "Raw Fan Speed[%d] = %02X %02X", devicenum, tach_data[0], tach_data[1]);
+    //ESP_LOGI(TAG, "Fan Speed[%d] = %d RPM", devicenum, rpm);
     //
     //uint8_t fan_conf;
     //uint8_t FAN_CONFIG1 = EMC2302_LV07_FAN1_CONFIG1 + (devicenum * 0x10);
@@ -68,7 +64,7 @@ uint16_t EMC2302_LV07_get_fan_speed(uint8_t devicenum) {
     //ESP_ERROR_CHECK(i2c_bitaxe_register_read(emc2302_lv07_dev_handle, FAN_CONFIG1, &fan_conf, 1));
     //ESP_LOGI(TAG, "Fan config[%d] = %02X", devicenum, fan_conf);
 
-    return RPM;
+    return rpm;
 }
 
 float EMC2302_LV07_get_external_temp(void) {
