@@ -104,7 +104,7 @@ export class LiveDataService {
           this.updates$.next(msg.data);
         }
       }),
-      retry({ delay: 5000 }),
+      retry({ delay: 3000 }),
       share()
     );
   }

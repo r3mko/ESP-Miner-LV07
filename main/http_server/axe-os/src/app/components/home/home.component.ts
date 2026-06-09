@@ -471,8 +471,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (this.lastMessageTime > 0) {
       const now = new Date().getTime();
       const elapsedMs = now - this.lastMessageTime;
-      // 5 seconds without a message means connection is stale
-      if (elapsedMs > 5000) {
+      // 10 seconds without a message means connection is stale
+      if (elapsedMs > 10000) {
         const durationSeconds = Math.floor(elapsedMs / 1000);
         const current = this.systemInfoError$.value;
         if (current.duration !== durationSeconds) {
