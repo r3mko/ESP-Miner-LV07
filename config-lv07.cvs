@@ -27,4 +27,4 @@ boardversion,data,string,302
 rotation,data,u16,180
 autofanspeed,data,u16,1
 manualfanspeed,data,u16,100
-selftest,data,u16,1
+selftest,data,u16,0
