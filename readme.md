@@ -1,6 +1,6 @@
-# LV07 custom firmware
+# LV07 & LV08 custom firmware
 
-This Git repository aims to stay as close as possible to the original project, with no modifications beyond adding support for the LV07.
+This Git repository aims to stay as close as possible to the original project, with no modifications beyond adding support for the LV07 and LV08.
 Our goal is to maintain full compatibility while extending functionality to this hardware without altering the core project.
 
 [![](https://dcbadge.vercel.app/api/server/3E8ca2dkcC)](https://discord.gg/osmu)
