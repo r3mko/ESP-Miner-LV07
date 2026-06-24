@@ -11,6 +11,7 @@
 #include "connect.h"
 #include "sv2_protocol.h"
 #include "sv2_noise.h"
+#include "mining.h"
 #include "nvs_config.h"
 #include "work_queue.h"
 #include "utils.h"
@@ -546,8 +547,8 @@ static void stratum_v2_handle_set_target(GlobalState *GLOBAL_STATE, sv2_conn_t *
     }
 
     memcpy(conn->target, max_target, 32);
-    uint32_t pdiff = sv2_target_to_pdiff(max_target);
-    ESP_LOGI(TAG, "Set pool difficulty: %lu", pdiff);
+    double pdiff = hash_to_pdiff(max_target);
+    ESP_LOGI(TAG, "Set pool difficulty: %g", pdiff);
     GLOBAL_STATE->pool_difficulty = pdiff;
     GLOBAL_STATE->new_set_mining_difficulty_msg = true;
 }
@@ -885,14 +886,14 @@ void stratum_v2_task(void *pvParameters)
             conn->channel_opened = true;
             memcpy(conn->target, target, 32);
 
-            uint32_t pdiff = sv2_target_to_pdiff(target);
+            double pdiff = hash_to_pdiff(target);
             GLOBAL_STATE->pool_difficulty = pdiff;
             GLOBAL_STATE->new_set_mining_difficulty_msg = true;
 
             ESP_LOGI(TAG, "Mining channel opened: channel_id=%lu, group=%lu, type=%s",
                      channel_id, group_channel_id,
                      channel_type == SV2_CHANNEL_EXTENDED ? SV2_CHANNEL_TYPE_EXTENDED : SV2_CHANNEL_TYPE_STANDARD);
-            ESP_LOGI(TAG, "Set pool difficulty: %lu", pdiff);
+            ESP_LOGI(TAG, "Set pool difficulty: %g", pdiff);
         }
 
         // Connection successful, reset retry counter
