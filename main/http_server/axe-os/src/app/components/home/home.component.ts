@@ -16,8 +16,9 @@ import { ThemeService } from 'src/app/services/theme.service';
 import { LayoutService } from 'src/app/layout/service/app.layout.service';
 import { SystemInfo as ISystemInfo, SystemStatistics as ISystemStatistics } from 'src/app/generated/models';
 import { Title } from '@angular/platform-browser';
-import { UIChart } from 'primeng/chart';
-import { SelectItem } from 'primeng/api';
+import { AppChartComponent } from '../chart/app-chart.component';
+import { SelectOption } from 'src/app/models/select-option.model';
+
 import { eChartLabel } from 'src/models/enum/eChartLabel';
 import { chartLabelValue } from 'src/models/enum/eChartLabel';
 import { chartLabelKey } from 'src/models/enum/eChartLabel';
@@ -79,7 +80,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   public info$!: Observable<ISystemInfo>;
   public stats$!: Observable<ISystemStatistics>;
-  public pools$!: Observable<SelectItem<PoolLabel>[]>;
+  public pools$!: Observable<SelectOption<PoolLabel>[]>;
 
   public chartOptions: any;
   public dataLabel: number[] = [];
@@ -124,7 +125,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   ];
 
   @ViewChild('chart')
-  private chart?: UIChart
+  private chart?: AppChartComponent
 
   private gridStackEl?: ElementRef<HTMLElement>;
   @ViewChild('gridStack', { static: false })
@@ -485,9 +486,9 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private updateChartColors() {
     const documentStyle = getComputedStyle(document.documentElement);
-    const textColorSecondary = (documentStyle.getPropertyValue('--p-text-muted-color') || documentStyle.getPropertyValue('--text-color-secondary')).trim();
-    const surfaceBorder = (documentStyle.getPropertyValue('--p-content-border-color') || documentStyle.getPropertyValue('--surface-border')).trim();
-    const primaryColor = documentStyle.getPropertyValue('--primary-color').trim();
+    const textColorSecondary = documentStyle.getPropertyValue('--color-text-secondary').trim();
+    const surfaceBorder = documentStyle.getPropertyValue('--color-border-content').trim();
+    const primaryColor = documentStyle.getPropertyValue('--color-primary').trim();
     this.primaryColorRgb = this.hexToRgb(primaryColor);
 
     // Update chart colors
@@ -533,9 +534,9 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private initializeChart() {
     const documentStyle = getComputedStyle(document.documentElement);
-    const textColorSecondary = (documentStyle.getPropertyValue('--p-text-muted-color') || documentStyle.getPropertyValue('--text-color-secondary')).trim();
-    const surfaceBorder = (documentStyle.getPropertyValue('--p-content-border-color') || documentStyle.getPropertyValue('--surface-border')).trim();
-    const primaryColor = documentStyle.getPropertyValue('--primary-color').trim();
+    const textColorSecondary = documentStyle.getPropertyValue('--color-text-secondary').trim();
+    const surfaceBorder = documentStyle.getPropertyValue('--color-border-content').trim();
+    const primaryColor = documentStyle.getPropertyValue('--color-primary').trim();
     this.primaryColorRgb = this.hexToRgb(primaryColor);
 
     this.chartData = {
@@ -973,7 +974,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     this.pools$ = this.info$
       .pipe(map(info => {
-        const result: SelectItem<PoolLabel>[] = [];
+        const result: SelectOption<PoolLabel>[] = [];
         if (info.stratumURL) {
           result.push({ label: 'Primary', value: 'Primary' });
         }
@@ -984,7 +985,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       }));
   }
 
-  onPoolChange(event: { originalEvent: Event; value: PoolLabel }) {
+  onPoolChange(event: { originalEvent?: Event; value: PoolLabel }) {
     const useFallbackStratum = Number(event.value === 'Fallback');
 
     this.systemService.updateSystem('', { useFallbackStratum })
@@ -1108,7 +1109,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     updateMessage(!!info.hardware_fault, 'HARDWARE_FAULT', 'error', `${info.hardware_fault}`);
     updateMessage(!info.frequency || info.frequency < 400, 'FREQUENCY_LOW', 'warn', 'Device frequency is set low - See settings');
     updateMessage(!!info.isUsingFallbackStratum, 'FALLBACK_STRATUM', 'warn', 'Using fallback pool - Share stats reset. Check Pool Settings and / or reboot Device.');
-    updateMessage(info.version !== info.axeOSVersion, 'VERSION_MISMATCH', 'warn', `Firmware (${info.version}) and AxeOS (${info.axeOSVersion}) versions do not match. Please make sure to update both www.bin and esp-miner.bin.`);
+    updateMessage(info.version !== info.axeOSVersion, 'VERSION_MISMATCH', 'warn', `Firmware (${info.version}) and AxeOS (${info.axeOSVersion}) versions do not match. Please make sure to update both www.bin and the compatible module-specific firmware.`);
     if (info.coinbaseOutputs && info.coinbaseOutputs.length > 0) {
       let percentage = this.getPayoutPercentage(info);
       updateMessage(percentage > 0 && percentage < 95, 'NOT_SOLO_MINING', 'warn', `Your share of the mining reward is only ${percentage.toFixed(1)}%`);

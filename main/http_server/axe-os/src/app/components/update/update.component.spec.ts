@@ -1,30 +1,31 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-
-import { UpdateComponent } from './update.component';
-import { ModalComponent } from '../modal/modal.component';
-import { FileUpload, FileUploadHandlerEvent, FileUploadModule } from 'primeng/fileupload';
-import { CheckboxModule } from 'primeng/checkbox';
-import { ProgressBarModule } from 'primeng/progressbar';
-import { ButtonModule } from 'primeng/button';
+import { ElementRef } from '@angular/core';
 import { HttpEventType, provideHttpClient } from '@angular/common/http';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideToastr, ToastrService } from 'ngx-toastr';
-import { SystemApiService } from 'src/app/services/system.service';
 import { of } from 'rxjs';
+
+import { CheckboxComponent } from '../checkbox/checkbox.component';
+import { ModalComponent } from '../modal/modal.component';
+import { SystemApiService } from 'src/app/services/system.service';
+import { UpdateComponent } from './update.component';
 
 describe('UpdateComponent', () => {
   let component: UpdateComponent;
   let fixture: ComponentFixture<UpdateComponent>;
   let systemService: SystemApiService;
   let toastrService: ToastrService;
+  let firmwareInput: HTMLInputElement;
+  let websiteInput: HTMLInputElement;
 
-  const createUploadEvent = (filename: string): FileUploadHandlerEvent => ({
-    files: [new File(['firmware'], filename)],
-  } as FileUploadHandlerEvent);
+  const createFile = (filename: string): File => new File(['firmware'], filename);
+  const createFileSelectionEvent = (file: File): Event => ({
+    target: { files: [file] },
+  } as unknown as Event);
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       declarations: [UpdateComponent, ModalComponent],
-      imports: [FileUploadModule, CheckboxModule, ButtonModule, ProgressBarModule],
+      imports: [CheckboxComponent],
       providers: [provideHttpClient(), provideToastr()]
     });
     fixture = TestBed.createComponent(UpdateComponent);
@@ -32,7 +33,11 @@ describe('UpdateComponent', () => {
     systemService = TestBed.inject(SystemApiService);
     toastrService = TestBed.inject(ToastrService);
     fixture.detectChanges();
-    component.firmwareUpload = jasmine.createSpyObj<FileUpload>('FileUpload', ['clear']);
+
+    firmwareInput = document.createElement('input');
+    websiteInput = document.createElement('input');
+    component.firmwareUpload = new ElementRef(firmwareInput);
+    component.websiteUpload = new ElementRef(websiteInput);
   });
 
   it('should create', () => {
@@ -70,16 +75,34 @@ describe('UpdateComponent', () => {
     expect(component.hasCompatibleFirmwareAsset(assets, '312')).toBeFalse();
   });
 
-  it('should upload matching module firmware immediately', () => {
+  it('should route native file selections to the correct update handler', () => {
+    const firmwareFile = createFile('esp-miner-mcn16r2.bin');
+    const websiteFile = createFile('www.bin');
+    const firmwareSpy = spyOn(component, 'otaUpdate');
+    const websiteSpy = spyOn(component, 'otaWWWUpdate');
+
+    component.onFileSelected(createFileSelectionEvent(firmwareFile), 'firmwareUpload', '312');
+    component.onFileSelected(createFileSelectionEvent(websiteFile), 'websiteUpload');
+
+    expect(firmwareSpy).toHaveBeenCalledOnceWith(firmwareFile, '312');
+    expect(websiteSpy).toHaveBeenCalledOnceWith(websiteFile);
+  });
+
+  it('should upload matching module firmware immediately and clear the input', () => {
     const otaSpy = spyOn(systemService, 'performOTAUpdate').and.returnValue(of({ type: HttpEventType.Response, ok: true } as any));
-    const mcn16r2Event = createUploadEvent('esp-miner-mcn16r2.bin');
-    const mcn16r8Event = createUploadEvent('esp-miner-mcn16r8.bin');
+    const mcn16r2File = createFile('esp-miner-mcn16r2.bin');
+    const mcn16r8File = createFile('esp-miner-mcn16r8.bin');
 
-    component.otaUpdate(mcn16r2Event, '312');
-    component.otaUpdate(mcn16r8Event, '302');
+    firmwareInput.value = 'selected';
+    component.otaUpdate(mcn16r2File, '312');
+    expect(firmwareInput.value).toBe('');
 
-    expect(otaSpy).toHaveBeenCalledWith(mcn16r2Event.files[0]);
-    expect(otaSpy).toHaveBeenCalledWith(mcn16r8Event.files[0]);
+    firmwareInput.value = 'selected';
+    component.otaUpdate(mcn16r8File, '302');
+
+    expect(otaSpy).toHaveBeenCalledWith(mcn16r2File);
+    expect(otaSpy).toHaveBeenCalledWith(mcn16r8File);
+    expect(firmwareInput.value).toBe('');
     expect(component.pendingFirmwareFile).toBeNull();
   });
 
@@ -87,10 +110,10 @@ describe('UpdateComponent', () => {
     const otaSpy = spyOn(systemService, 'performOTAUpdate');
     const errorSpy = spyOn(toastrService, 'error');
 
-    component.otaUpdate(createUploadEvent('esp-miner-mcn16r8.bin'), '312');
-    component.otaUpdate(createUploadEvent('esp-miner-mcn16r2.bin'), '302');
-    component.otaUpdate(createUploadEvent('esp-miner-factory-lv07.bin'), '312');
-    component.otaUpdate(createUploadEvent('www.bin'), '312');
+    component.otaUpdate(createFile('esp-miner-mcn16r8.bin'), '312');
+    component.otaUpdate(createFile('esp-miner-mcn16r2.bin'), '302');
+    component.otaUpdate(createFile('esp-miner-factory-lv07.bin'), '312');
+    component.otaUpdate(createFile('www.bin'), '312');
 
     expect(otaSpy).not.toHaveBeenCalled();
     expect(errorSpy).toHaveBeenCalledTimes(4);
@@ -98,17 +121,17 @@ describe('UpdateComponent', () => {
 
   it('should require confirmation before uploading legacy firmware', () => {
     const otaSpy = spyOn(systemService, 'performOTAUpdate').and.returnValue(of({ type: HttpEventType.Response, ok: true } as any));
-    const event = createUploadEvent('esp-miner.bin');
+    const file = createFile('esp-miner.bin');
 
-    component.otaUpdate(event, '312');
+    component.otaUpdate(file, '312');
 
     expect(otaSpy).not.toHaveBeenCalled();
-    expect(component.pendingFirmwareFile).toBe(event.files[0]);
+    expect(component.pendingFirmwareFile).toBe(file);
     expect(component.firmwareCompatibilityModal?.isVisible).toBeTrue();
 
     component.confirmLegacyFirmwareUpdate();
 
-    expect(otaSpy).toHaveBeenCalledWith(event.files[0]);
+    expect(otaSpy).toHaveBeenCalledWith(file);
     expect(component.pendingFirmwareFile).toBeNull();
     expect(component.firmwareCompatibilityModal?.isVisible).toBeFalse();
   });
@@ -116,7 +139,7 @@ describe('UpdateComponent', () => {
   it('should cancel a pending legacy firmware upload', () => {
     const otaSpy = spyOn(systemService, 'performOTAUpdate');
 
-    component.otaUpdate(createUploadEvent('esp-miner.bin'), '302');
+    component.otaUpdate(createFile('esp-miner.bin'), '302');
     component.cancelLegacyFirmwareUpdate();
 
     expect(otaSpy).not.toHaveBeenCalled();
