@@ -1,6 +1,6 @@
-# LV07 & LV08 custom firmware
+# LV07, LV07 Pro & LV08 custom firmware
 
-This Git repository aims to stay as close as possible to the original project, with no modifications beyond adding support for the LV07 and LV08.
+This Git repository aims to stay as close as possible to the original project, with no modifications beyond adding support for the LV07, LV07 Pro, and LV08.
 Our goal is to maintain full compatibility while extending functionality to this hardware without altering the core project.
 
 [![](https://dcbadge.vercel.app/api/server/3E8ca2dkcC)](https://discord.gg/osmu)
@@ -272,12 +272,25 @@ git submodule update --init --recursive
 
 ### Building
 
-At the root of the repository, run:
+Select the build profile that matches the ESP32-S3 module installed on the miner.
+
+For LV07 and LV08 devices with an N16R8 module (16MB flash and 8MB Octal SPI PSRAM), run:
+
 ```
-idf.py build && ./merge_bin.sh ./esp-miner-merged.bin
+idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.mcn16r8.defaults" build
+./merge_bin.sh ./esp-miner-merged-mcn16r8.bin
 ```
 
-Note: the merge_bin.sh script is a custom script that merges the bootloader, partition table, and the application binary into a single file.
+For LV07 Pro devices with an N16R2 module (16MB flash and 2MB Quad SPI PSRAM), run:
+
+```
+idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.mcn16r2.defaults" build
+./merge_bin.sh ./esp-miner-merged-mcn16r2.bin
+```
+
+When switching between module profiles, remove the generated `sdkconfig` file and run `idf.py fullclean` before rebuilding so the new defaults are applied.
+
+Note: the `merge_bin.sh` script is a custom script that merges the bootloader, partition table, and the application binary into a single file.
 
 Note: if using VSCode, you may have to configure the settings.json file to match your esp hardware version. For example, if your bitaxe has something other than an esp32-s3, you will need to change the version in the `.vscode/settings.json` file.
 
@@ -296,7 +309,7 @@ A custom board version is also possible with `config-custom.cvs`. A custom board
 **Notes:** 
   - If you are developing within a dev container, you will need to run the bitaxetool command from outside the container. Otherwise, you will get an error about the device not being found.
   - Some Bitaxe versions can't directly connect to a USB-C port. If yours is affected use a USB-A adapter as a workaround. More about it [here](https://github.com/bitaxeorg/bitaxeGamma/issues/37).
-  - Only ESP32-S3-WROOM-1 module type N16R8 (16MB Flash, 8MB Octal SPI PSRAM) is supported. This model number should be visible on the ESP32 module. Other module types without PSRAM or with Quad SPI PSRAM will not work with the normal firmware. More about it [here](https://github.com/bitaxeorg/ESP-Miner/issues/826).
+  - ESP32-S3 module types N16R8 (16MB flash, 8MB Octal SPI PSRAM) and N16R2 (16MB flash, 2MB Quad SPI PSRAM) are supported through separate build profiles. LV07 and LV08 use the N16R8 profile; LV07 Pro uses the N16R2 profile. The module type should be visible on the ESP32 module. Modules without PSRAM are not supported. More about PSRAM compatibility [here](https://github.com/bitaxeorg/ESP-Miner/issues/826).
 
 ### Wi-Fi routers
 

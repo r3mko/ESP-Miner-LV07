@@ -19,7 +19,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build_type: ["lv07", "lv08"]
+        include:
+          - build_type: lv07
+            module: mcn16r8
+            sdkconfig_defaults: sdkconfig.mcn16r8.defaults
+          - build_type: lv08
+            module: mcn16r8
+            sdkconfig_defaults: sdkconfig.mcn16r8.defaults
+          - build_type: lv07pro
+            module: mcn16r2
+            sdkconfig_defaults: sdkconfig.mcn16r2.defaults
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
@@ -39,7 +48,7 @@ jobs:
         with:
           esp_idf_version: v5.5.3
           target: esp32s3
-          command: GITHUB_ACTIONS="true" idf.py build
+          command: GITHUB_ACTIONS="true" idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;${{ matrix.sdkconfig_defaults }}" build
           path: '.'
       - name: "esp-idf build factory config for ${{ matrix.build_type }}"
         uses: espressif/esp-idf-ci-action@v1
@@ -53,13 +62,13 @@ jobs:
           python-version: '3.13'
           cache: 'pip'
       - run: pip install esptool
-      - name: "Create factory image for ${{ matrix.build_type }}-${{ github.ref_name }}"
-        run: "./merge_bin.sh -c esp-miner-factory-${{ matrix.build_type }}-${{ github.ref_name }}.bin"
-      - name: Release esp-miner.bin
+      - name: "Create factory image for ${{ matrix.build_type }}-${{ matrix.module }}-${{ github.ref_name }}"
+        run: "./merge_bin.sh -c esp-miner-factory-${{ matrix.build_type }}-${{ matrix.module }}-${{ github.ref_name }}.bin"
+      - name: Release esp-miner-factory.bin
         uses: softprops/action-gh-release@v2.4.2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: "esp-miner-factory-${{ matrix.build_type }}-${{ github.ref_name }}.bin"
+          files: "esp-miner-factory-${{ matrix.build_type }}-${{ matrix.module }}-${{ github.ref_name }}.bin"
 #      - name: Install rclone
 #        run: |
 #          curl -fsSL https://rclone.org/install.sh | sudo bash
@@ -70,6 +79,6 @@ jobs:
 #        run: |
 #          mkdir -p ~/.config/rclone
 #          echo "$RCLONE_CONF" > ~/.config/rclone/rclone.conf
-#          rclone copyto "esp-miner-factory-${{ matrix.build_type }}-${{ github.ref_name }}.bin" \
-#            "r2:esp-miner/${{ github.ref_name }}/esp-miner-factory-${{ matrix.build_type }}-${{ github.ref_name }}.bin" \
+#          rclone copyto "esp-miner-factory-${{ matrix.build_type }}-${{ matrix.module }}-${{ github.ref_name }}.bin" \
+#            "r2:esp-miner/${{ github.ref_name }}/esp-miner-factory-${{ matrix.build_type }}-${{ matrix.module }}-${{ github.ref_name }}.bin" \
 #            --s3-acl public-read --s3-no-check-bucket

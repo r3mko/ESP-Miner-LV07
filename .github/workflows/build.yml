@@ -8,6 +8,15 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    name: "Firmware ${{ matrix.module }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - module: mcn16r8
+            sdkconfig_defaults: sdkconfig.mcn16r8.defaults
+          - module: mcn16r2
+            sdkconfig_defaults: sdkconfig.mcn16r2.defaults
     steps:
     - name: Checkout repo
       uses: actions/checkout@v6
@@ -27,7 +36,7 @@ jobs:
       with:
         esp_idf_version: v5.5.3
         target: esp32s3
-        command: GITHUB_ACTIONS="true" idf.py build
+        command: GITHUB_ACTIONS="true" idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;${{ matrix.sdkconfig_defaults }}" build
         path: '.'
     - uses: actions/setup-python@v6
       with:
@@ -35,18 +44,21 @@ jobs:
         cache: 'pip'
     - run: pip install esptool
     - name: "Create factory/merged image"
-      run: "./merge_bin.sh ./esp-miner-merged.bin"
+      run: "./merge_bin.sh ./esp-miner-merged-${{ matrix.module }}.bin"
+    - name: "Prepare firmware artifact"
+      run: "cp ./build/esp-miner.bin ./esp-miner-${{ matrix.module }}.bin"
     - name: upload esp-miner-merged.bin
       uses: actions/upload-artifact@v4
       with:
-        name: esp-miner-factory.bin
-        path: ./esp-miner-merged.bin
+        name: esp-miner-factory-${{ matrix.module }}.bin
+        path: ./esp-miner-merged-${{ matrix.module }}.bin
     - name: upload esp-miner.bin
       uses: actions/upload-artifact@v4
       with:
-        name: esp-miner.bin
-        path: ./build/esp-miner.bin
+        name: esp-miner-${{ matrix.module }}.bin
+        path: ./esp-miner-${{ matrix.module }}.bin
     - name: upload www.bin
+      if: matrix.module == 'mcn16r8'
       uses: actions/upload-artifact@v4
       with:
         name: www.bin

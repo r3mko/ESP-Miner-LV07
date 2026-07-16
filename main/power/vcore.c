@@ -71,6 +71,28 @@ static TPS546_CONFIG get_tps546_config(const FamilyConfig * family)
         //config.TPS546_INIT_COMPENSATION_CONFIG[4] = 0x0c;
         break;
 
+    case LV07_PRO:
+        config.TPS546_INIT_PHASE = TPS546_INIT_PHASE_SINGLE;
+        config.TPS546_INIT_VIN_ON = 11.5;
+        config.TPS546_INIT_VIN_OFF = 11.0;
+        config.TPS546_INIT_VIN_UV_WARN_LIMIT = 11.5;
+        config.TPS546_INIT_VIN_OV_FAULT_LIMIT = 13.5;
+        config.TPS546_INIT_SCALE_LOOP = 0.125;
+        config.TPS546_INIT_VOUT_MIN = 1;
+        config.TPS546_INIT_VOUT_MAX = 2;
+        config.TPS546_INIT_VOUT_COMMAND = 1.2;
+        config.TPS546_INIT_IOUT_OC_WARN_LIMIT = 25.00;
+        config.TPS546_INIT_IOUT_OC_FAULT_LIMIT = 30.00;
+        // Single-phase configuration
+        config.TPS546_INIT_STACK_CONFIG = 0x0000; // 1 module
+        config.TPS546_INIT_SYNC_CONFIG = 0x10;    // Disable SYNC
+        //config.TPS546_INIT_COMPENSATION_CONFIG[0] = 0x12;
+        //config.TPS546_INIT_COMPENSATION_CONFIG[1] = 0x20;
+        //config.TPS546_INIT_COMPENSATION_CONFIG[2] = 0xc6;
+        //config.TPS546_INIT_COMPENSATION_CONFIG[3] = 0x13;
+        //config.TPS546_INIT_COMPENSATION_CONFIG[4] = 0x0c;
+        break;
+
     case GAMMA_TURBO:
         config.TPS546_INIT_PHASE = TPS546_INIT_PHASE_MULTI;
         config.TPS546_INIT_VIN_ON = 11.0;
@@ -216,7 +238,7 @@ esp_err_t VCORE_set_voltage(GlobalState * GLOBAL_STATE, float core_voltage)
 
 int16_t VCORE_get_voltage_mv(GlobalState * GLOBAL_STATE)
 {
-    if (strcmp(GLOBAL_STATE->DEVICE_CONFIG.family.name, "LV07") == 0) {
+    if (strcmp(GLOBAL_STATE->DEVICE_CONFIG.family.name, "LV07") == 0 || strcmp(GLOBAL_STATE->DEVICE_CONFIG.family.name, "LV07Pro") == 0) {
         return TPS546_get_vout() * 1000;
     }
     if (GLOBAL_STATE->DEVICE_CONFIG.TPS546) {

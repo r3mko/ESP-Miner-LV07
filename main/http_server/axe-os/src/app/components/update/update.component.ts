@@ -12,6 +12,9 @@ import { ModalComponent } from '../modal/modal.component';
 import { SystemInfo } from 'src/app/generated/models';
 
 const IGNORE_RELEASE_CHECK_WARNING = 'IGNORE_RELEASE_CHECK_WARNING';
+const LEGACY_FIRMWARE_FILENAME = 'esp-miner.bin';
+const MCN16R8_FIRMWARE_FILENAME = 'esp-miner-mcn16r8.bin';
+const MCN16R2_FIRMWARE_FILENAME = 'esp-miner-mcn16r2.bin';
 
 @Component({
     selector: 'app-update',
@@ -23,6 +26,7 @@ export class UpdateComponent {
 
   public firmwareUpdateProgress: number = 0;
   public websiteUpdateProgress: number = 0;
+  public pendingFirmwareFile: File | null = null;
 
   public checkLatestRelease: boolean = false;
   public latestRelease$: Observable<any>;
@@ -34,6 +38,7 @@ export class UpdateComponent {
 
   @ViewChild('privacyModal') privacyModal?: ModalComponent;
   @ViewChild('progressModal') progressModal?: ModalComponent;
+  @ViewChild('firmwareCompatibilityModal') firmwareCompatibilityModal?: ModalComponent;
 
   public updateTarget: string = '';
   public updateStatus: 'progress' | 'success' | 'error' = 'progress';
@@ -54,15 +59,59 @@ export class UpdateComponent {
     this.info$ = this.liveDataService.info$;
   }
 
-  otaUpdate(event: FileUploadHandlerEvent) {
+  otaUpdate(event: FileUploadHandlerEvent, boardVersion: string) {
     const file = event.files[0];
     this.firmwareUpload.clear(); // clear the file upload component
 
-    if (file.name != 'esp-miner.bin') {
-      this.toastrService.error('Incorrect file, looking for esp-miner.bin.');
+    if (file.name === LEGACY_FIRMWARE_FILENAME) {
+      this.pendingFirmwareFile = file;
+      if (this.firmwareCompatibilityModal) {
+        this.firmwareCompatibilityModal.isVisible = true;
+      }
       return;
     }
 
+    const expectedFilename = this.getExpectedFirmwareFilename(boardVersion);
+    if (file.name !== expectedFilename) {
+      this.toastrService.error(`Incorrect firmware file for this device. Expected ${expectedFilename}.`);
+      return;
+    }
+
+    this.performFirmwareUpdate(file);
+  }
+
+  public getExpectedFirmwareFilename(boardVersion: string | null | undefined): string {
+    return boardVersion?.trim() === '312' ? MCN16R2_FIRMWARE_FILENAME : MCN16R8_FIRMWARE_FILENAME;
+  }
+
+  public isFirmwareReleaseAsset(filename: string, boardVersion: string | null | undefined): boolean {
+    return filename === this.getExpectedFirmwareFilename(boardVersion);
+  }
+
+  public hasCompatibleFirmwareAsset(assets: Array<{ name: string }> | null | undefined, boardVersion: string | null | undefined): boolean {
+    return assets?.some(asset => this.isFirmwareReleaseAsset(asset.name, boardVersion)) ?? false;
+  }
+
+  public confirmLegacyFirmwareUpdate(): void {
+    const file = this.pendingFirmwareFile;
+    this.pendingFirmwareFile = null;
+    if (this.firmwareCompatibilityModal) {
+      this.firmwareCompatibilityModal.isVisible = false;
+    }
+
+    if (file) {
+      this.performFirmwareUpdate(file);
+    }
+  }
+
+  public cancelLegacyFirmwareUpdate(): void {
+    this.pendingFirmwareFile = null;
+    if (this.firmwareCompatibilityModal) {
+      this.firmwareCompatibilityModal.isVisible = false;
+    }
+  }
+
+  private performFirmwareUpdate(file: File): void {
     this.updateTarget = 'Firmware';
     this.updateStatus = 'progress';
     this.updateMessage = '';

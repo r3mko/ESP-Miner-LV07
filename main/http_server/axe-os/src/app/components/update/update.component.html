@@ -34,13 +34,21 @@
                             [href]="latestRelease.html_url">{{latestRelease.name}}</a>
                         </h3>
 
-                        <div class="text-orange-500 mb-3">Download both files for update!</div>
+                        <div class="text-orange-500 mb-3">Download the compatible firmware and www.bin for update!</div>
+
+                        <ng-container *ngIf="info$ | async as info">
+                            <div *ngFor="let asset of latestRelease.assets">
+                                <div *ngIf="isFirmwareReleaseAsset(asset.name, info.boardVersion)">
+                                    <a style="text-decoration: underline;" target="_blank"
+                                        [href]="asset.browser_download_url">{{asset.name}}</a>
+                                </div>
+                            </div>
+                            <div class="text-red-500" *ngIf="!hasCompatibleFirmwareAsset(latestRelease.assets, info.boardVersion)">
+                                Compatible firmware is not available in this release.
+                            </div>
+                        </ng-container>
 
                         <div *ngFor="let asset of latestRelease.assets">
-                            <div *ngIf="asset.name == 'esp-miner.bin'">
-                                <a style="text-decoration: underline;" target="_blank"
-                                    [href]="asset.browser_download_url">esp-miner.bin</a>
-                            </div>
                             <div *ngIf="asset.name == 'www.bin'">
                                 <a style="text-decoration: underline;" target="_blank"
                                     [href]="asset.browser_download_url">www.bin</a>
@@ -71,15 +79,29 @@
         <div class="col-12 lg:col-6 xl:col-4">
             <div class="card h-full">
                 <h3>Update Firmware</h3>
-                <p-fileupload #firmwareUpload [customUpload]="true" mode="basic" accept=".bin" (uploadHandler)="otaUpdate($event)"
-                    [auto]="true" chooseLabel="Browse"></p-fileupload>
+                <ng-container *ngIf="info$ | async as info; else firmwareInfoLoading">
+                    <p-fileupload #firmwareUpload [customUpload]="true" mode="basic" accept=".bin" (uploadHandler)="otaUpdate($event, info.boardVersion)"
+                        [auto]="true" chooseLabel="Browse"></p-fileupload>
 
-                <small>(esp-miner.bin)</small>
+                    <small>({{getExpectedFirmwareFilename(info.boardVersion)}})</small>
+                </ng-container>
+                <ng-template #firmwareInfoLoading>
+                    <small>Loading device information...</small>
+                </ng-template>
             </div>
 
         </div>
     </div>
 </div>
+<app-modal #firmwareCompatibilityModal [headline]="'Firmware Compatibility Warning'" [closable]="false">
+    <p>
+        The legacy <strong>esp-miner.bin</strong> firmware is not module-specific. Verify that it supports your ESP32-S3 module before continuing.
+    </p>
+    <div class="flex gap-3 mt-5 pb-3">
+        <p-button styleClass="p-button-secondary" (onClick)="cancelLegacyFirmwareUpdate()">Cancel</p-button>
+        <p-button (onClick)="confirmLegacyFirmwareUpdate()">Continue</p-button>
+    </div>
+</app-modal>
 <app-modal #progressModal [headline]="'Updating ' + updateTarget" [closable]="updateStatus !== 'progress'">
     <div class="flex flex-column align-items-center justify-content-center p-4">
         <ng-container *ngIf="updateStatus === 'progress'">
