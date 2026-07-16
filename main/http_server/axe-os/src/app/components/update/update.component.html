@@ -98,8 +98,8 @@
         The legacy <strong>esp-miner.bin</strong> firmware is not module-specific. Verify that it supports your ESP32-S3 module before continuing.
     </p>
     <div class="flex gap-3 mt-5 pb-3">
-        <p-button styleClass="p-button-secondary" (onClick)="cancelLegacyFirmwareUpdate()">Cancel</p-button>
         <p-button (onClick)="confirmLegacyFirmwareUpdate()">Continue</p-button>
+        <p-button styleClass="p-button-secondary" (onClick)="cancelLegacyFirmwareUpdate()">Cancel</p-button>
     </div>
 </app-modal>
 <app-modal #progressModal [headline]="'Updating ' + updateTarget" [closable]="updateStatus !== 'progress'">

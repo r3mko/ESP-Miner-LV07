@@ -73,7 +73,7 @@ export class UpdateComponent {
 
     const expectedFilename = this.getExpectedFirmwareFilename(boardVersion);
     if (file.name !== expectedFilename) {
-      this.toastrService.error(`Incorrect firmware file for this device. Expected ${expectedFilename}.`);
+      this.toastrService.error(`Incorrect file, looking for ${expectedFilename}.`);
       return;
     }
 
