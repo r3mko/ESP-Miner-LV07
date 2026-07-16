@@ -238,9 +238,6 @@ esp_err_t VCORE_set_voltage(GlobalState * GLOBAL_STATE, float core_voltage)
 
 int16_t VCORE_get_voltage_mv(GlobalState * GLOBAL_STATE)
 {
-    if (strcmp(GLOBAL_STATE->DEVICE_CONFIG.family.name, "LV07") == 0 || strcmp(GLOBAL_STATE->DEVICE_CONFIG.family.name, "LV07Pro") == 0) {
-        return TPS546_get_vout() * 1000;
-    }
     if (GLOBAL_STATE->DEVICE_CONFIG.TPS546) {
         return TPS546_get_vout() / GLOBAL_STATE->DEVICE_CONFIG.family.voltage_domains * 1000;
     }
