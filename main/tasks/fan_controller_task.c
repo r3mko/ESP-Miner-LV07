@@ -89,8 +89,10 @@ void FAN_CONTROLLER_task(void * pvParameters)
 
                 if (power_management->chip_temp_avg > 0) { // Ignore uninitialized or invalid temperature readings
                     float raw_temp;
-                    if (power_management->chip_temp2_avg > 0) {
-                        raw_temp = (power_management->chip_temp_avg + power_management->chip_temp2_avg) / 2.0; // average of both temps
+                    if (GLOBAL_STATE->DEVICE_CONFIG.family.id == LV08 && power_management->chip_temp2_avg > 0) {
+                        raw_temp = power_management->chip_temp2_avg;                                                // LV08 uses the second temperature sensor for fan control
+                    } else if (power_management->chip_temp2_avg > 0) {
+                        raw_temp = (power_management->chip_temp_avg + power_management->chip_temp2_avg) / 2.0;      // average of both temps
                     } else {
                         raw_temp = power_management->chip_temp_avg;
                     }
