@@ -18,7 +18,7 @@ esp_err_t EMC2302_LV07_init() {
     // Fan config (default) before register write: 2B = 00101011
     ESP_RETURN_ON_ERROR(i2c_bitaxe_register_write_byte(emc2302_lv07_dev_handle, EMC2302_LV07_FAN1_CONFIG1, 0b00001011), TAG, "Failed to configure fan 1 settings");
     ESP_RETURN_ON_ERROR(i2c_bitaxe_register_write_byte(emc2302_lv07_dev_handle, EMC2302_LV07_FAN2_CONFIG1, 0b00001011), TAG, "Failed to configure fan 2 settings");
-    ESP_RETURN_ON_ERROR(i2c_bitaxe_register_write_byte(emc2302_lv07_dev_handle, EMC2302_LV07_PWM_POLARITY, 0b00000011), TAG, "Failed to set PWM polarity");
+    ESP_RETURN_ON_ERROR(i2c_bitaxe_register_write_byte(emc2302_lv07_dev_handle, EMC2302_LV07_PWM_POLARITY, 0b00000000), TAG, "Failed to set PWM polarity");
 
     return ESP_OK;
 }
@@ -28,7 +28,7 @@ esp_err_t EMC2302_LV07_set_fan_speed(uint8_t devicenum, float percent) {
     uint8_t speed;
     uint8_t FAN_SETTING_REG = EMC2302_LV07_FAN1_SETTING + (devicenum * 0x10);
 
-    speed = (uint8_t) (255.0 * (1.0f - percent));
+    speed = (uint8_t) (255.0f * percent);
     ESP_RETURN_ON_ERROR(i2c_bitaxe_register_write_byte(emc2302_lv07_dev_handle, FAN_SETTING_REG, speed), TAG, "Failed to set fan speed");
 
     return ESP_OK;
