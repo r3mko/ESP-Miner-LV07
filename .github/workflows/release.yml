@@ -64,17 +64,6 @@ jobs:
       with:
         name: esp-miner-${{ matrix.module }}.bin
         path: ./esp-miner-${{ matrix.module }}.bin
-    - name: upload www.bin
-      if: matrix.module == 'mcn16r8'
-      uses: actions/upload-artifact@v4
-      with:
-        name: www.bin
-        path: ./build/www.bin
-    - name: Release www.bin
-      uses: softprops/action-gh-release@v2.4.2
-      if: startsWith(github.ref, 'refs/tags/') && matrix.module == 'mcn16r8'
-      with:
-        files: ./build/www.bin
     - name: Release esp-miner-${{ matrix.module }}.bin
       uses: softprops/action-gh-release@v2.4.2
       if: startsWith(github.ref, 'refs/tags/')

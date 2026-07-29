@@ -57,9 +57,3 @@ jobs:
       with:
         name: esp-miner-${{ matrix.module }}.bin
         path: ./esp-miner-${{ matrix.module }}.bin
-    - name: upload www.bin
-      if: matrix.module == 'mcn16r8'
-      uses: actions/upload-artifact@v4
-      with:
-        name: www.bin
-        path: ./build/www.bin
