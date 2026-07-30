@@ -34,7 +34,7 @@
                             [href]="latestRelease.html_url">{{latestRelease.name}}</a>
                         </h3>
 
-                        <div class="text-orange-500 mb-3">Download the compatible firmware for update!</div>
+                        <div class="text-orange-500 mb-3">Download the compatible firmware to update your device!</div>
 
                         <ng-container *ngIf="info$ | async as info">
                             <div *ngFor="let asset of latestRelease.assets">
