@@ -7,6 +7,8 @@
 
 #define THERMAL_MAX_SENSORS 2
 
+typedef struct GlobalState GlobalState;
+
 typedef enum
 {
     BM1397,
@@ -15,7 +17,7 @@ typedef enum
     BM1370,
 } Asic;
 
-typedef struct {
+typedef struct AsicConfig {
     Asic id;
     const char * name;
     uint16_t chip_id;
@@ -48,7 +50,7 @@ typedef enum
     LV07_PRO,
 } Family;
 
-typedef struct {
+typedef struct FamilyConfig {
     Family id;
     const char * name;
     AsicConfig asic;
@@ -60,7 +62,7 @@ typedef struct {
     const char * swarm_color;
 } FamilyConfig;
 
-typedef struct {
+typedef struct DeviceConfig {
     const char * board_version;
     FamilyConfig family;
     bool plug_sense;
@@ -168,6 +170,6 @@ static const DeviceConfig default_configs[] = {
     { .board_version = "801",  .family = FAMILY_GAMMA_TURBO, .EMC2103 = true,                                          .temp_flip = true, .temp_offset = 0,   .TPS546 = true,                                                           .power_consumption_target = 36,  },
 };
 
-esp_err_t device_config_init(void * pvParameters);
+esp_err_t device_config_init(GlobalState * GLOBAL_STATE);
 
 #endif /* DEVICE_CONFIG_H_ */

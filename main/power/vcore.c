@@ -10,6 +10,8 @@
 #include "TPS546_LV08.h"
 #include "adc.h"
 #include "driver/gpio.h"
+#include "global_state.h"
+#include "device_config.h"
 #include "vcore.h"
 
 #define GPIO_ASIC_ENABLE CONFIG_GPIO_ASIC_ENABLE

@@ -1,9 +1,12 @@
 #ifndef MINING_H_
 #define MINING_H_
 
-#include "stratum_api.h"
+#include <stddef.h>
+#include <stdint.h>
 
-typedef struct
+typedef struct mining_notify mining_notify;
+
+typedef struct bm_job
 {
     uint32_t version;
     uint32_t version_mask;

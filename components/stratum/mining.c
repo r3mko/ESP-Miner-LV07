@@ -1,10 +1,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>
+#include <stdlib.h>
 #include "mining.h"
+#include "stratum_api.h"
 #include "utils.h"
-#include "mbedtls/sha256.h"
-#include "esp_log.h"
 
 void free_bm_job(bm_job *job)
 {

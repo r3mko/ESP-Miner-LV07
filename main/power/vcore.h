@@ -2,7 +2,9 @@
 #define VCORE_H_
 
 #include "TPS546_LV08.h"
-#include "global_state.h"
+#include "esp_err.h"
+
+typedef struct GlobalState GlobalState;
 
 esp_err_t VCORE_init(GlobalState * GLOBAL_STATE);
 esp_err_t VCORE_set_voltage(GlobalState * GLOBAL_STATE, float core_voltage);
