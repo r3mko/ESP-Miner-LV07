@@ -2023,7 +2023,9 @@ esp_err_t start_rest_server(GlobalState * global_state)
         .method = HTTP_GET, 
         .handler = websocket_handler, 
         .user_ctx = (void *)WS_TYPE_LOGS, 
-        .is_websocket = true
+        .is_websocket = true,
+        .ws_pre_handshake_cb = websocket_pre_handshake,
+        .ws_post_handshake_cb = websocket_post_handshake
     };
     httpd_register_uri_handler(server, &ws);
 
@@ -2032,7 +2034,9 @@ esp_err_t start_rest_server(GlobalState * global_state)
         .method = HTTP_GET, 
         .handler = websocket_handler, 
         .user_ctx = (void *)WS_TYPE_API, 
-        .is_websocket = true
+        .is_websocket = true,
+        .ws_pre_handshake_cb = websocket_pre_handshake,
+        .ws_post_handshake_cb = websocket_post_handshake
     };
     httpd_register_uri_handler(server, &ws_live);
 

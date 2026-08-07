@@ -34,7 +34,7 @@ jobs:
     - name: esp-idf build
       uses: espressif/esp-idf-ci-action@v1
       with:
-        esp_idf_version: v5.5.3
+        esp_idf_version: v6.0.2
         target: esp32s3
         command: GITHUB_ACTIONS="true" idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;${{ matrix.sdkconfig_defaults }}" build
         path: '.'
