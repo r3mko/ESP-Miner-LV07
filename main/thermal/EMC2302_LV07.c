@@ -9,7 +9,7 @@ static const char *TAG = "EMC2302_LV07";
 
 static i2c_master_dev_handle_t emc2302_lv07_dev_handle;
 
-esp_err_t EMC2302_LV07_init() {
+esp_err_t EMC2302_LV07_init(void) {
     ESP_RETURN_ON_ERROR(i2c_bitaxe_add_device(EMC2302_LV07_I2CADDR_DEFAULT, &emc2302_lv07_dev_handle, TAG), TAG, "Failed to add device");
 
     ESP_LOGI(TAG, "Initializing: EMC2302_LV07 fan configuration (RNG=00)");
