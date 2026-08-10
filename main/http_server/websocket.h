@@ -12,7 +12,13 @@ void websocket_set_log_task_handle(TaskHandle_t task_handle);
 
 #define MESSAGE_QUEUE_SIZE (128)
 #define MAX_WEBSOCKET_CLIENTS (10)
-#define LOG_BUFFER_SIZE  (512 * 1024)  /* 512 KB */
+
+// LV07 Pro has quad mode SPIRAM, use smaller buffer to save memory
+#ifdef CONFIG_SPIRAM_MODE_QUAD
+    #define LOG_BUFFER_SIZE  (128 * 1024)  /* 128 KB for LV07 Pro (quad mode) */
+#else
+    #define LOG_BUFFER_SIZE  (512 * 1024)  /* 512 KB default */
+#endif
 
 typedef enum {
     WS_TYPE_LOGS,

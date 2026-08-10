@@ -17,8 +17,10 @@
 
 static const char * TAG = "log_buffer";
 
-// Increment this when log_buffer_header_t struct changes
-#define LOG_BUFFER_MAGIC 0xB17A5E10 
+// Increment the base when log_buffer_header_t changes.
+// Including LOG_BUFFER_SIZE invalidates resized retained rings.
+#define LOG_BUFFER_MAGIC_BASE 0xB17A5E10u
+#define LOG_BUFFER_MAGIC (LOG_BUFFER_MAGIC_BASE ^ LOG_BUFFER_SIZE)
 
 typedef struct {
     uint32_t magic;
