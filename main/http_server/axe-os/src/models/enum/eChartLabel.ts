@@ -23,7 +23,7 @@ export enum eChartLabel {
 
 export const ChartUnitGroups: { name: string, value: string, labels: string[] }[] = [
     { name: 'Hashrate (H/s)', value: 'hashrate', labels: ['hashrate', 'hashrate_1m', 'hashrate_10m', 'hashrate_1h'] },
-    { name: 'Temperature (°C)', value: 'temperature', labels: ['asicTemp', 'asicTemp2', 'vrTemp'] },
+    { name: 'Temperature (°C)', value: 'temperature', labels: ['asicTemp', 'asicTemp1', 'asicTemp2', 'vrTemp'] },
     { name: 'Voltage (V)', value: 'voltage', labels: ['asicVoltage', 'voltage'] },
     { name: 'Power (W)', value: 'power', labels: ['power'] },
     { name: 'Current (A)', value: 'current', labels: ['current'] },

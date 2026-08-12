@@ -189,6 +189,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   public payoutPercentage: number = -1;
   public chartDataSources: { name: string; value: string }[] = [];
   private lastHasVrTemp = false;
+  private lastHasAsicTemp1 = false;
   private lastHasAsicTemp2 = false;
   private lastHasFanRpm = false;
   private lastHasFan2Rpm = false;
@@ -501,7 +502,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   private isSensorSupported(labelKey: string, info?: ISystemInfo): boolean {
     switch(labelKey) {
       case 'vrTemp': return info ? (this.lastHasVrTemp || !!info.vrTemp) : this.lastHasVrTemp;
-      case 'asicTemp2' : return info ? (this.lastHasAsicTemp2 || !!(info.temp2 && info.temp2 !== -1)) : this.lastHasAsicTemp2;
+      case 'asicTemp1' : return info ? (this.lastHasAsicTemp1 || !!(info.temp && info.temp !== -1 && info.temp2 !== -1)) : this.lastHasAsicTemp1;
+      case 'asicTemp2' : return info ? (this.lastHasAsicTemp2 || !!(info.temp2 && info.temp2 !== -1 && info.temp !== -1)) : this.lastHasAsicTemp2;
       case 'fanRpm': return info ? (this.lastHasFanRpm || !!info.fanrpm) : this.lastHasFanRpm;
       case 'fan2Rpm': return info ? (this.lastHasFan2Rpm || !!info.fan2rpm) : this.lastHasFan2Rpm;
       default: return true;
@@ -1242,18 +1244,21 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private updateChartDataSources(info: ISystemInfo) {
     const hasVrTemp = this.isSensorSupported('vrTemp', info);
+    const hasAsicTemp1 = this.isSensorSupported('asicTemp1', info);
     const hasAsicTemp2 = this.isSensorSupported('asicTemp2', info);
     const hasFanRpm = this.isSensorSupported('fanRpm', info);
     const hasFan2Rpm = this.isSensorSupported('fan2Rpm', info);
 
     if (
       this.lastHasVrTemp !== hasVrTemp ||
+      this.lastHasAsicTemp1 !== hasAsicTemp1 ||
       this.lastHasAsicTemp2 !== hasAsicTemp2 ||
       this.lastHasFanRpm !== hasFanRpm ||
       this.lastHasFan2Rpm !== hasFan2Rpm ||
       this.chartDataSources.length === 0
     ) {
       this.lastHasVrTemp = hasVrTemp;
+      this.lastHasAsicTemp1 = hasAsicTemp1;
       this.lastHasAsicTemp2 = hasAsicTemp2;
       this.lastHasFanRpm = hasFanRpm;
       this.lastHasFan2Rpm = hasFan2Rpm;
