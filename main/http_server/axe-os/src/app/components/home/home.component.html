@@ -306,7 +306,7 @@
             </h6>
             <app-progressbar
               [value]="(info.temp / maxTemp) * 100"
-              [markers]="[{ value: (info.temptarget / maxTemp) * 100, label: info.temptarget + ' °C', visible: info.autofanspeed === 1 && 0 >= info.temp2 }]">
+              [markers]="[{ value: (info.temptarget / maxTemp) * 100, label: info.temptarget + ' °C', visible: info.autofanspeed === 1 }]">
             </app-progressbar>
 
             @if (info.temp >= 70) {
