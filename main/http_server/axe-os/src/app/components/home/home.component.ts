@@ -63,9 +63,9 @@ const WIDGET_DEFAULTS: WidgetDef[] = [
   { id: 'power',       label: 'Power',               x: 0, y: 5,   w: 4,  h: 7,  minW: 2, minH: 3 },
   { id: 'heat',        label: 'Heat',                x: 4, y: 5,   w: 4,  h: 7,  minW: 2, minH: 3 },
   { id: 'fan',         label: 'Fan',                 x: 8, y: 5,   w: 4,  h: 7,  minW: 2, minH: 3 },
-  { id: 'pool',        label: 'Pool',                x: 0, y: 12,  w: 4,  h: 6,  minW: 2, minH: 3 },
-  { id: 'blockheader', label: 'Block Header',        x: 4, y: 12,  w: 4,  h: 6,  minW: 2, minH: 3 },
-  { id: 'registers',   label: 'Hashrate Registers',  x: 8, y: 12,  w: 4,  h: 6,  minW: 2, minH: 3 },
+  { id: 'pool',        label: 'Pool',                x: 0, y: 12,  w: 4,  h: 7,  minW: 2, minH: 3 },
+  { id: 'blockheader', label: 'Block Header',        x: 4, y: 12,  w: 4,  h: 7,  minW: 2, minH: 3 },
+  { id: 'registers',   label: 'Hashrate Registers',  x: 8, y: 12,  w: 4,  h: 7,  minW: 2, minH: 3 },
   { id: 'misc',        label: 'Misc',                x: 0, y: 18,  w: 4,  h: 6,  minW: 2, minH: 3 },
 ];
 
