@@ -2,6 +2,7 @@ import { ElementRef } from '@angular/core';
 import { HttpErrorResponse, HttpEventType, provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
+import { ProgressbarComponent } from '../progressbar/progressbar.component';
 import { provideToastr, ToastrService } from 'ngx-toastr';
 import { of } from 'rxjs';
 
@@ -27,7 +28,7 @@ describe('UpdateComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       declarations: [UpdateComponent, ModalComponent],
-      imports: [CheckboxComponent, FormsModule],
+      imports: [CheckboxComponent, ProgressbarComponent, FormsModule],
       providers: [provideHttpClient(), provideToastr()]
     });
     fixture = TestBed.createComponent(UpdateComponent);

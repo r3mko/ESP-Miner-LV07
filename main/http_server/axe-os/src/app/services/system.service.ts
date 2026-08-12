@@ -217,14 +217,18 @@ export class SystemApiService {
     ).pipe(delay(1000));
   }
 
-  public getStatistics(y1: string, y2: string, uri: string = ''): Observable<ISystemStatistics> {
+  public getStatistics(y1: string[], y2: string[], uri: string = ''): Observable<ISystemStatistics> {
     let columnList = [chartLabelKey(eChartLabel.hashrate), chartLabelKey(eChartLabel.power)];
 
-    if ((y1 != chartLabelKey(eChartLabel.hashrate)) && (y1 != chartLabelKey(eChartLabel.power))) {
-      columnList.push(y1);
+    for (const y of y1) {
+      if ((y != chartLabelKey(eChartLabel.hashrate)) && (y != chartLabelKey(eChartLabel.power)) && !columnList.includes(y)) {
+        columnList.push(y);
+      }
     }
-    if ((y2 != chartLabelKey(eChartLabel.hashrate)) && (y2 != chartLabelKey(eChartLabel.power))) {
-      columnList.push(y2);
+    for (const y of y2) {
+      if ((y != chartLabelKey(eChartLabel.hashrate)) && (y != chartLabelKey(eChartLabel.power)) && !columnList.includes(y)) {
+        columnList.push(y);
+      }
     }
 
     if (!environment.mock && this.api) {
