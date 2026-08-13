@@ -34,12 +34,6 @@ static uint8_t DEVICE_ID_TPS546D24S[] = {0x54, 0x49, 0x54, 0x6D, 0x24, 0x62};
 
 static TPS546_CONFIG tps546_config;
 
-// Cached values to handle I2C failures robustly
-static float last_vin = 0.0f;
-static float last_iout = 0.0f;
-static float last_vout = 0.0f;
-static float last_temp = 0;
-
 static esp_err_t TPS546_parse_status(tps546_t *vreg, uint16_t);
 
 /**
@@ -349,6 +343,10 @@ esp_err_t TPS546_LV08_init(tps546_t *vreg, uint8_t i2c_address, const char *TAG,
     }
 
     vreg->TAG = TAG;
+    vreg->last_vin = 0.0f;
+    vreg->last_iout = 0.0f;
+    vreg->last_vout = 0.0f;
+    vreg->last_temp = 0.0f;
 
     tps546_config = config;
 
@@ -555,8 +553,9 @@ void TPS546_LV08_write_entire_config(tps546_t *vreg)
     smb_write_byte(vreg, PMBUS_PHASE, tps546_config.TPS546_INIT_PHASE);
 
     /* Switch frequency */
-    ESP_LOGI(vreg->TAG, "Setting FREQUENCY: %dMHz", TPS546_LV08_INIT_FREQUENCY);
-    smb_write_word(vreg, PMBUS_FREQUENCY_SWITCH, int_2_slinear11(vreg, TPS546_LV08_INIT_FREQUENCY));
+    uint16_t freq = tps546_config.TPS546_INIT_FREQUENCY ? tps546_config.TPS546_INIT_FREQUENCY : TPS546_LV08_DEFAULT_FREQUENCY;
+    ESP_LOGI(vreg->TAG, "Setting FREQUENCY: %dKHz", freq);
+    smb_write_word(vreg, PMBUS_FREQUENCY_SWITCH, int_2_slinear11(vreg, freq));
 
     if(tps546_config.TPS546_INIT_COMPENSATION_CONFIG[0] != 0 &&
        tps546_config.TPS546_INIT_COMPENSATION_CONFIG[1] != 0 &&
@@ -718,11 +717,11 @@ float TPS546_LV08_get_temperature(tps546_t *vreg)
 
     if (smb_read_word(vreg, PMBUS_READ_TEMPERATURE_1, &value) != ESP_OK) {
         ESP_LOGE(vreg->TAG, "Could not read temperature");
-        return last_temp;
+        return vreg->last_temp;
     }
     
     temp = slinear11_2_float(value);
-    last_temp = temp;
+    vreg->last_temp = temp;
     return temp;
 }
 
@@ -734,13 +733,13 @@ float TPS546_LV08_get_vin(tps546_t *vreg)
     /* Get voltage input (ULINEAR16) */
     if (smb_read_word(vreg, PMBUS_READ_VIN, &u16_value) != ESP_OK) {
         ESP_LOGE(vreg->TAG, "Could not read VIN");
-        return last_vin;
+        return vreg->last_vin;
     } else {
         vin = slinear11_2_float(u16_value);
         #ifdef DEBUG_TPS546_MEAS
         ESP_LOGI(vreg->TAG, "Got Vin: %2.3f V", vin);
         #endif
-        last_vin = vin;
+        vreg->last_vin = vin;
         return vin;
     }    
 }
@@ -753,14 +752,14 @@ float TPS546_LV08_get_iout(tps546_t *vreg)
     /* Get current output (SLINEAR11) */
     if (smb_read_word(vreg, PMBUS_READ_IOUT, &u16_value) != ESP_OK) {
         ESP_LOGE(vreg->TAG, "Could not read Iout");
-        return last_iout;
+        return vreg->last_iout;
     } else {
         iout = slinear11_2_float(u16_value);
 
     #ifdef DEBUG_TPS546_MEAS
         ESP_LOGI(vreg->TAG, "Got Iout: %2.3f A", iout);
     #endif
-        last_iout = iout;
+        vreg->last_iout = iout;
         return iout;
     }
 }
@@ -773,13 +772,13 @@ float TPS546_LV08_get_vout(tps546_t *vreg)
     /* Get voltage output (ULINEAR16) */
     if (smb_read_word(vreg, PMBUS_READ_VOUT, &u16_value) != ESP_OK) {
         ESP_LOGE(vreg->TAG, "Could not read Vout");
-        return last_vout;
+        return vreg->last_vout;
     } else {
         vout = ulinear16_2_float(vreg, u16_value);
     #ifdef DEBUG_TPS546_MEAS
         ESP_LOGI(vreg->TAG, "Got Vout: %2.3f V", vout);
     #endif
-        last_vout = vout;
+        vreg->last_vout = vout;
         return vout;
     }
 }
