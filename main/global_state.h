@@ -69,7 +69,7 @@ typedef struct SystemModule
     float hashrate_10m;
     float hashrate_1h;
     float error_percentage;
-    int64_t start_time;
+    int64_t start_time_us;
     uint64_t shares_accepted;
     uint64_t shares_rejected;
     uint16_t shares_pending;
@@ -116,6 +116,7 @@ typedef struct SystemModule
     char * version;
     char * axeOSVersion;
     Scoreboard scoreboard;
+    uint64_t uptime_seconds;
     cached_partition_t cached_partitions[3];
     int cached_partitions_count;
     char mdns_hostname[64];

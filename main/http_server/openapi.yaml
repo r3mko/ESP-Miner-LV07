@@ -529,6 +529,15 @@ components:
         sharesRejected:
           type: number
           description: Number of rejected shares
+        totalUptimeSeconds:
+          type: number
+          description: Total uptime in seconds
+        totalHashes:
+          type: number
+          description: Total hashes done by the device
+        totalLog2Work:
+          type: number
+          description: Log2 of total hashes
         sharesPending:
           type: number
           description: Shares submitted but not yet resolved by the pool (SV2; 0 for SV1). Rises while the pool batches/buffers acks, drops to 0 once it catches up.

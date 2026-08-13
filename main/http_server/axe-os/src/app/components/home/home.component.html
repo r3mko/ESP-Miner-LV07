@@ -637,16 +637,43 @@
     <div class="grid-stack-item" gs-id="misc">
       <div class="grid-stack-item-content">
         <div class="card">
-          <h4 class="white-space-nowrap overflow-hidden text-overflow-ellipsis">Misc</h4>
+          <h4 class="white-space-nowrap overflow-hidden text-overflow-ellipsis font-medium">Misc</h4>
 
-          <div class="flex flex-nowrap">
-            <div class="col-fixed-width text-500">
+          <div class="flex flex-nowrap mb-1">
+            <div class="w-24 shrink-0 text-secondary">
               <span>Uptime</span>
             </div>
             <div>
               <span>{{ info.uptimeSeconds | dateAgo: { intervals: 2, strict:true, short:false } }}</span>
             </div>
           </div>
+
+          @if (info.totalUptimeSeconds) {
+            <div class="flex flex-nowrap mb-1">
+              <div class="w-24 shrink-0 text-secondary">
+                <span>Total Uptime</span>
+              </div>
+              <div>
+                <span>{{ info.totalUptimeSeconds | dateAgo: { intervals: 2, strict:true, short:false } }}</span>
+              </div>
+            </div>
+          }
+
+          @if (info.totalLog2Work) {
+            <div class="flex flex-nowrap">
+              <div class="w-24 shrink-0 text-secondary">
+                <tooltip-text-icon
+                  text="Hashes"
+                  tooltip="Approximate number of your total accumulated hashes (personal mining effort)."
+                />
+              </div>
+              <div>
+                <span class="cursor-pointer font-medium" appTooltip="{{info.totalHashes | number}} total hashes" tooltipPosition="bottom">
+                  2<sup class="leading-none align-baseline relative -top-[0.4em]">{{info.totalLog2Work | number:'1.6-6'}}</sup>
+                </span>
+              </div>
+            </div>
+          }
         </div>
       </div>
     </div>
