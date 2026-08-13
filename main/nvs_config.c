@@ -770,4 +770,3 @@ bool nvs_config_has_key(NvsConfigKey key)
     xSemaphoreGive(nvs_cache_mutex);
     return result;
 }
-

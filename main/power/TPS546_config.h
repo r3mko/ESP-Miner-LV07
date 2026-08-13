@@ -21,12 +21,12 @@ typedef struct
   float TPS546_INIT_IOUT_OC_WARN_LIMIT; /* A */
   float TPS546_INIT_IOUT_OC_FAULT_LIMIT; /* A */
 
-  
+ 
   uint16_t TPS546_INIT_STACK_CONFIG; /* Stack configuration */
   uint8_t TPS546_INIT_SYNC_CONFIG; /* Sync configuration */
   uint8_t TPS546_INIT_COMPENSATION_CONFIG[5];
   uint16_t TPS546_INIT_FREQUENCY; /* Switch frequency in KHz */
-  
+ 
 } TPS546_CONFIG;
 
 #endif /* TPS546_CONFIG_H_ */

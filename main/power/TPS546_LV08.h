@@ -112,7 +112,7 @@ typedef struct {
 #define TPS546_LV08_INIT_IOUT_OC_FAULT_RESPONSE 0xC0  /* shut down, no retries */
 
 /* temperature */
-// It is better to set the temperature warn limit for TPS546 more higher than Ultra 
+// It is better to set the temperature warn limit for TPS546 more higher than Ultra
 #define TPS546_LV08_INIT_OT_WARN_LIMIT 105 /* degrees C */
 #define TPS546_LV08_INIT_OT_FAULT_LIMIT 125 /* degrees C */
 
