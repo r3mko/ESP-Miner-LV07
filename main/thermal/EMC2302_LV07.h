@@ -3,8 +3,8 @@
 
 #include "i2c_bitaxe.h"
 
-#define EMC2302_LV07_I2CADDR_DEFAULT 0x2F    ///< EMC2302_LV07-1 default i2c address
-#define EMC2302_LV07_1_I2CADDR_DEFAULT 0x2E  ///< EMC2302_LV07-2 default i2c address
+#define EMC2302_LV07_I2CADDR_DEFAULT 0x2F    ///< EMC2302-2 default I2C address
+#define EMC2302_LV07_1_I2CADDR_DEFAULT 0x2E  ///< EMC2302-1 default I2C address
 #define EMC2302_LV07_WHOAMI 0xFD             ///< Chip ID register
 #define EMC2302_LV07_MANUFACTURER_ID 0xFE    ///< Manufacturer ID
 #define EMC2302_LV07_REVISION 0xFF           ///< Chip revision
@@ -17,8 +17,8 @@
 #define EMC2302_LV07_INT_ENABLE 0x29         ///< interrupt enable register
 #define EMC2302_LV07_PWM_POLARITY 0x2A       ///< PWM polarity config
 #define EMC2302_LV07_PWM_OUTPUT 0x2B         ///< PWM output config
-#define EMC2302_LV07_PWM_BASEF45 0x2C        ///<
-#define EMC2302_LV07_PWM_BASEF123            ///<
+#define EMC2302_LV07_PWM_BASEF45 0x2C        ///< PWM base frequency for fans 4 and 5
+#define EMC2302_LV07_PWM_BASEF123 0x2D       ///< PWM base frequency for fans 1, 2, and 3
 
 #define EMC2302_LV07_FAN1_SETTING 0x30       ///< Fan 1 setting
 #define EMC2302_LV07_PWM1_DIVIDE 0x31        ///< PWM 1 divider
@@ -52,32 +52,10 @@
 #define EMC2302_LV07_TACH2_MSB 0x4E          ///< Tach 2 reading high byte
 #define EMC2302_LV07_TACH2_LSB 0x4F          ///< Tach 2 reading low byte
 
-#define EMC2302_LV07_FAN_RPM_NUMERATOR 3932160 ///< Conversion unit to convert LSBs to fan RPM
-#define _TEMP_LSB 0.125                        ///< single bit value for internal temperature readings
-
-/**
- * @brief
- *
- * Allowed values for `setDataRate`.
- */
-typedef enum
-{
-    EMC2302_LV07_RATE_1_16_HZ, ///< 1_16_HZ
-    EMC2302_LV07_RATE_1_8_HZ,  ///< 1_8_HZ
-    EMC2302_LV07_RATE_1_4_HZ,  ///< 1_4_HZ
-    EMC2302_LV07_RATE_1_2_HZ,  ///< 1_2_HZ
-    EMC2302_LV07_RATE_1_HZ,    ///< 1_HZ
-    EMC2302_LV07_RATE_2_HZ,    ///< 2_HZ
-    EMC2302_LV07_RATE_4_HZ,    ///< 4_HZ
-    EMC2302_LV07_RATE_8_HZ,    ///< 8_HZ
-    EMC2302_LV07_RATE_16_HZ,   ///< 16_HZ
-    EMC2302_LV07_RATE_32_HZ,   ///< 32_HZ
-} emc2302_lv07_rate_t;
+#define EMC2302_LV07_FAN_RPM_NUMERATOR 3932160UL ///< Conversion unit to convert LSBs to fan RPM
 
 esp_err_t EMC2302_LV07_init(void);
-esp_err_t EMC2302_LV07_set_fan_speed(uint8_t, float);
-uint16_t EMC2302_LV07_get_fan_speed(uint8_t);
-float EMC2302_LV07_get_external_temp(void);
-uint8_t EMC2302_LV07_get_internal_temp(void);
+esp_err_t EMC2302_LV07_set_fan_speed(uint8_t devicenum, float percent);
+uint16_t EMC2302_LV07_get_fan_speed(uint8_t devicenum);
 
 #endif /* EMC2302_LV07_H_ */

@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "esp_log.h"
 #include "esp_check.h"
 
@@ -25,6 +24,9 @@ esp_err_t EMC2302_LV07_init(void) {
 
 // Set fan speed to a given percent
 esp_err_t EMC2302_LV07_set_fan_speed(uint8_t devicenum, float percent) {
+    ESP_RETURN_ON_FALSE(devicenum < 2, ESP_ERR_INVALID_ARG, TAG, "Invalid fan number: %u", devicenum);
+    ESP_RETURN_ON_FALSE(percent >= 0.0f && percent <= 1.0f, ESP_ERR_INVALID_ARG, TAG, "Invalid fan percentage: %.3f", percent);
+
     uint8_t speed;
     uint8_t FAN_SETTING_REG = EMC2302_LV07_FAN1_SETTING + (devicenum * 0x10);
 
@@ -36,6 +38,11 @@ esp_err_t EMC2302_LV07_set_fan_speed(uint8_t devicenum, float percent) {
 
 // Get fan speed
 uint16_t EMC2302_LV07_get_fan_speed(uint8_t devicenum) {
+    if (devicenum >= 2) {
+        ESP_LOGE(TAG, "Invalid fan number: %u", devicenum);
+        return 0;
+    }
+
     uint8_t tach_data[2] = {0};
     uint8_t TACH_MSB_REG = EMC2302_LV07_TACH1_MSB + (devicenum * 0x10);
 
@@ -51,7 +58,12 @@ uint16_t EMC2302_LV07_get_fan_speed(uint8_t devicenum) {
         return 0;
     }
 
-    uint16_t rpm = EMC2302_LV07_FAN_RPM_NUMERATOR / tach_counter;
+    uint32_t rpm = EMC2302_LV07_FAN_RPM_NUMERATOR / tach_counter;
+
+    if (rpm > UINT16_MAX) {
+        ESP_LOGW(TAG, "RPM %u exceeds uint16_t range, clamping", rpm);
+        rpm = UINT16_MAX;
+    }
 
     // DEBUG: Get fan speed and config
     //
@@ -64,15 +76,5 @@ uint16_t EMC2302_LV07_get_fan_speed(uint8_t devicenum) {
     //ESP_ERROR_CHECK(i2c_bitaxe_register_read(emc2302_lv07_dev_handle, FAN_CONFIG1, &fan_conf, 1));
     //ESP_LOGI(TAG, "Fan config[%d] = %02X", devicenum, fan_conf);
 
-    return rpm;
-}
-
-float EMC2302_LV07_get_external_temp(void) {
-    // We don't have temperature on this chip
-    return -1;
-}
-
-uint8_t EMC2302_LV07_get_internal_temp(void) {
-    // We don't have temperature on this chip
-    return -1;
+    return (uint16_t)rpm;
 }
