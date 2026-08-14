@@ -13,6 +13,7 @@
 typedef struct {
     i2c_master_dev_handle_t dev_handle;
     const char             *TAG;
+    int                     temp_offset;
 } tmp1075_t;
 
 esp_err_t TMP1075_LV07_init(tmp1075_t *sensor, uint8_t i2c_address, const char *TAG, int temp_offset_param);
