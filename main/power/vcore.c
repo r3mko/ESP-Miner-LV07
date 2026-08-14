@@ -306,9 +306,11 @@ esp_err_t VCORE_check_fault(GlobalState * GLOBAL_STATE)
         ESP_RETURN_ON_ERROR(TPS546_check_status(GLOBAL_STATE), TAG, "TPS546 check status failed!");
     }
     if (GLOBAL_STATE->DEVICE_CONFIG.TPS546_LV08) {
-        esp_err_t res_vreg_0 = TPS546_LV08_check_status(&vreg_0, GLOBAL_STATE);
-        esp_err_t res_vreg_1 = TPS546_LV08_check_status(&vreg_1, GLOBAL_STATE);
-        esp_err_t res_vreg_2 = TPS546_LV08_check_status(&vreg_2, GLOBAL_STATE);
+        esp_err_t res_vreg_0 = TPS546_LV08_check_status(&vreg_0);
+        esp_err_t res_vreg_1 = TPS546_LV08_check_status(&vreg_1);
+        esp_err_t res_vreg_2 = TPS546_LV08_check_status(&vreg_2);
+
+        GLOBAL_STATE->SYSTEM_MODULE.power_fault = vreg_0.fault_active || vreg_1.fault_active || vreg_2.fault_active;
 
         // return the first non-ESP_OK
         if (res_vreg_0 != ESP_OK) return res_vreg_0;

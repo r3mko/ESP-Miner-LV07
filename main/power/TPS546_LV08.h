@@ -8,8 +8,6 @@
 #include "i2c_bitaxe.h"
 #include "TPS546_config.h"
 
-typedef struct GlobalState GlobalState;
-
 //#define TPS546_LV08_I2CADDR         0x24  // TPS546 i2c address
 #define TPS546_LV08_I2CADDR_ALERT   0x0C  // TPS546 SMBus Alert address
 #define TPS546_LV08_MANUFACTURER_ID 0xFE  // Manufacturer ID
@@ -38,6 +36,7 @@ typedef struct {
     float                   last_iout;
     float                   last_vout;
     float                   last_temp;
+    bool                    fault_active;
 } tps546_t;
 
 typedef struct {
@@ -204,10 +203,10 @@ typedef struct {
 /* public functions */
 esp_err_t TPS546_LV08_init(tps546_t *vreg, uint8_t i2c_address, const char *TAG, TPS546_CONFIG config);
 
-void TPS546_LV08_read_mfr_info(tps546_t *vreg, uint8_t *);
+void TPS546_LV08_read_mfr_info(tps546_t *vreg, uint8_t *read_mfr_revision);
 void TPS546_LV08_write_entire_config(tps546_t *vreg);
 int TPS546_LV08_get_frequency(tps546_t *vreg);
-void TPS546_LV08_set_frequency(tps546_t *vreg, int);
+void TPS546_LV08_set_frequency(tps546_t *vreg, int newfreq);
 float TPS546_LV08_get_temperature(tps546_t *vreg);
 float TPS546_LV08_get_vin(tps546_t *vreg);
 float TPS546_LV08_get_iout(tps546_t *vreg);
@@ -215,7 +214,7 @@ float TPS546_LV08_get_vout(tps546_t *vreg);
 esp_err_t TPS546_LV08_set_vout(tps546_t *vreg, float volts);
 void TPS546_LV08_show_voltage_settings(tps546_t *vreg);
 
-esp_err_t TPS546_LV08_check_status(tps546_t *vreg, GlobalState * GLOBAL_STATE);
+esp_err_t TPS546_LV08_check_status(tps546_t *vreg);
 esp_err_t TPS546_LV08_clear_faults(tps546_t *vreg);
 
 const char* TPS546_LV08_get_error_message(void); //Get the current TPS error message

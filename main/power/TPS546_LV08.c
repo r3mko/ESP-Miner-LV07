@@ -1,5 +1,5 @@
-#include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <math.h>
 #include <string.h>
 #include "esp_log.h"
@@ -9,7 +9,6 @@
 #include "pmbus_commands.h"
 
 #include "i2c_bitaxe.h"
-#include "global_state.h"
 #include "TPS546_LV08.h"
 
 //#define DEBUG_TPS546_MEAS 1 //uncomment to debug TPS546 measurements
@@ -35,6 +34,21 @@ static uint8_t DEVICE_ID_TPS546D24S[] = {0x54, 0x49, 0x54, 0x6D, 0x24, 0x62};
 static TPS546_CONFIG tps546_config;
 
 static esp_err_t TPS546_parse_status(tps546_t *vreg, uint16_t);
+
+static esp_err_t validate_vreg(const tps546_t *vreg)
+{
+    if (vreg == NULL) {
+        ESP_LOGE("TPS546_LV08", "NULL regulator pointer");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (vreg->TAG == NULL || vreg->dev_handle == NULL) {
+        ESP_LOGE("TPS546_LV08", "Regulator is not initialized");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    return ESP_OK;
+}
 
 /**
  * @brief SMBus read byte
@@ -337,16 +351,15 @@ esp_err_t TPS546_LV08_init(tps546_t *vreg, uint8_t i2c_address, const char *TAG,
     uint8_t comp_config[5];
     uint8_t voutmode;
 
-    if (vreg == NULL || TAG == NULL) {
-        ESP_LOGE("TPS546_LV08", "NULL pointer in vreg or tag");
-        return ESP_FAIL;
-    }
+    ESP_RETURN_ON_FALSE(vreg != NULL && TAG != NULL, ESP_ERR_INVALID_ARG, "TPS546_LV08", "NULL pointer in vreg or tag");
 
+    vreg->dev_handle = NULL;
     vreg->TAG = TAG;
     vreg->last_vin = 0.0f;
     vreg->last_iout = 0.0f;
     vreg->last_vout = 0.0f;
     vreg->last_temp = 0.0f;
+    vreg->fault_active = false;
 
     tps546_config = config;
 
@@ -485,6 +498,10 @@ esp_err_t TPS546_LV08_init(tps546_t *vreg, uint8_t i2c_address, const char *TAG,
 }
 
 esp_err_t TPS546_LV08_clear_faults(tps546_t *vreg) {
+    esp_err_t err = validate_vreg(vreg);
+    if (err != ESP_OK) {
+        return err;
+    }
 
     ESP_RETURN_ON_ERROR(smb_write_addr(vreg, PMBUS_CLEAR_FAULTS), vreg->TAG, "Failed to write address");
 
@@ -500,6 +517,14 @@ esp_err_t TPS546_LV08_clear_faults(tps546_t *vreg) {
 */
 void TPS546_LV08_read_mfr_info(tps546_t *vreg, uint8_t *read_mfr_revision)
 {
+    if (validate_vreg(vreg) != ESP_OK) {
+        return;
+    }
+    if (read_mfr_revision == NULL) {
+        ESP_LOGE(vreg->TAG, "NULL manufacturer revision pointer");
+        return;
+    }
+
     uint8_t read_mfr_id[4];
     uint8_t read_mfr_model[4];
 
@@ -529,6 +554,9 @@ void TPS546_LV08_read_mfr_info(tps546_t *vreg, uint8_t *read_mfr_revision)
 */
 void TPS546_LV08_write_entire_config(tps546_t *vreg)
 {
+    if (validate_vreg(vreg) != ESP_OK) {
+        return;
+    }
     
     ESP_LOGI(vreg->TAG, "---Writing new config values to TPS546---");
 
@@ -686,6 +714,10 @@ void TPS546_LV08_write_entire_config(tps546_t *vreg)
 
 int TPS546_LV08_get_frequency(tps546_t *vreg)
 {
+    if (validate_vreg(vreg) != ESP_OK) {
+        return 0;
+    }
+
     uint16_t value = 0;
     int freq;
 
@@ -697,6 +729,10 @@ int TPS546_LV08_get_frequency(tps546_t *vreg)
 
 void TPS546_LV08_set_frequency(tps546_t *vreg, int newfreq)
 {
+    if (validate_vreg(vreg) != ESP_OK) {
+        return;
+    }
+
     uint16_t value = 0;
     //int freq;
 
@@ -712,6 +748,10 @@ void TPS546_LV08_set_frequency(tps546_t *vreg, int newfreq)
 
 float TPS546_LV08_get_temperature(tps546_t *vreg)
 {
+    if (validate_vreg(vreg) != ESP_OK) {
+        return vreg != NULL ? vreg->last_temp : 0.0f;
+    }
+
     uint16_t value = 0;
     float temp;
 
@@ -727,6 +767,10 @@ float TPS546_LV08_get_temperature(tps546_t *vreg)
 
 float TPS546_LV08_get_vin(tps546_t *vreg)
 {
+    if (validate_vreg(vreg) != ESP_OK) {
+        return vreg != NULL ? vreg->last_vin : 0.0f;
+    }
+
     uint16_t u16_value = 0;
     float vin;
 
@@ -746,6 +790,10 @@ float TPS546_LV08_get_vin(tps546_t *vreg)
 
 float TPS546_LV08_get_iout(tps546_t *vreg)
 {
+    if (validate_vreg(vreg) != ESP_OK) {
+        return vreg != NULL ? vreg->last_iout : 0.0f;
+    }
+
     uint16_t u16_value = 0;
     float iout;
 
@@ -766,6 +814,10 @@ float TPS546_LV08_get_iout(tps546_t *vreg)
 
 float TPS546_LV08_get_vout(tps546_t *vreg)
 {
+    if (validate_vreg(vreg) != ESP_OK) {
+        return vreg != NULL ? vreg->last_vout : 0.0f;
+    }
+
     uint16_t u16_value = 0;
     float vout;
 
@@ -783,21 +835,24 @@ float TPS546_LV08_get_vout(tps546_t *vreg)
     }
 }
 
-esp_err_t TPS546_LV08_check_status(tps546_t *vreg, GlobalState * GLOBAL_STATE) {
+esp_err_t TPS546_LV08_check_status(tps546_t *vreg) {
+    esp_err_t err = validate_vreg(vreg);
+    if (err != ESP_OK) {
+        return err;
+    }
 
-    SystemModule * SYSTEM_MODULE = &GLOBAL_STATE->SYSTEM_MODULE;
     uint16_t status;
 
     ESP_RETURN_ON_ERROR(smb_read_word(vreg, PMBUS_STATUS_WORD, &status), vreg->TAG, "Failed to read STATUS_WORD");
+
     //determine if this is a fault we care about
-    if (status & (TPS546_LV08_STATUS_OFF | TPS546_LV08_STATUS_VOUT_OV | TPS546_LV08_STATUS_IOUT_OC | TPS546_LV08_STATUS_VIN_UV | TPS546_LV08_STATUS_TEMP)) {
-        if (SYSTEM_MODULE->power_fault == 0) {
-            ESP_RETURN_ON_ERROR(TPS546_parse_status(vreg, status), vreg->TAG, "Failed to parse STATUS_WORD");
-            SYSTEM_MODULE->power_fault = 1;
-        }
-    } else {
-        SYSTEM_MODULE->power_fault = 0;
+    bool previous_fault = vreg->fault_active;
+    vreg->fault_active = (status & (TPS546_LV08_STATUS_OFF | TPS546_LV08_STATUS_VOUT_OV | TPS546_LV08_STATUS_IOUT_OC | TPS546_LV08_STATUS_VIN_UV | TPS546_LV08_STATUS_TEMP)) != 0;
+
+    if (vreg->fault_active && !previous_fault) {
+        ESP_RETURN_ON_ERROR(TPS546_parse_status(vreg, status), vreg->TAG, "Failed to parse STATUS_WORD");
     }
+
     return ESP_OK;
 }
 
@@ -1016,6 +1071,11 @@ static esp_err_t TPS546_parse_status(tps546_t *vreg, uint16_t status) {
  * @param volts The desired output voltage
 **/
 esp_err_t TPS546_LV08_set_vout(tps546_t *vreg, float volts) {
+    esp_err_t err = validate_vreg(vreg);
+    if (err != ESP_OK) {
+        return err;
+    }
+
     uint16_t value;
     uint8_t value8;
 
@@ -1063,6 +1123,10 @@ esp_err_t TPS546_LV08_set_vout(tps546_t *vreg, float volts) {
 
 void TPS546_LV08_show_voltage_settings(tps546_t *vreg)
 {
+    if (validate_vreg(vreg) != ESP_OK) {
+        return;
+    }
+
     uint16_t u16_value = 0;
     uint8_t u8_value;
     float f_value;
@@ -1139,9 +1203,17 @@ void TPS546_LV08_show_voltage_settings(tps546_t *vreg)
 }
 
 esp_err_t TPS546_LV08_snapshot_status(tps546_t *vreg, TPS546_LV08_StatusSnapshot *s) {
+    esp_err_t err = validate_vreg(vreg);
+    if (err != ESP_OK) {
+        return err;
+    }
+    if (s == NULL) {
+        ESP_LOGE(vreg->TAG, "NULL snapshot pointer");
+        return ESP_ERR_INVALID_ARG;
+    }
+
     uint16_t u16 = 0;
     uint8_t  u8  = 0;
-    esp_err_t err;
 
     // 1) Top-level
     err = smb_read_word(vreg, PMBUS_STATUS_WORD, &s->status_word);
