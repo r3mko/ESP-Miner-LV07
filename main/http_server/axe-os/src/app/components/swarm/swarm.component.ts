@@ -300,7 +300,6 @@ private isIpAddress(value: string): boolean {
         asic: fetchAsic ? this.httpClient.get(`http://${address}/api/system/asic`).pipe(catchError(() => of({}))) : of({})
       }).pipe(
         map(({ info, asic }) => {
-
           const existingDevice = this.swarm.find(device => device.connectionAddress === address);
           const result = {
             address: (info as any)['fullHostname'] || (info as any)['hostname'] || address,
