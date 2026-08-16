@@ -293,16 +293,13 @@ private isIpAddress(value: string): boolean {
     });
   }
 
-  private getAllDeviceInfo(addresses: string[], errorHandler: (error: any, address: string) => Observable<SwarmDevice[] | null>, fetchAsic: boolean = true) {
+  private getAllDeviceInfo(addresses: string[], errorHandler: (error: any, address: string) => Observable<SwarmDevice | null>, fetchAsic: boolean = true) {
     return from(addresses).pipe(
       mergeMap(address => forkJoin({
-        info: this.httpClient.get(`http://${address}/api/system/info`).pipe(catchError(() => of(null))),
+        info: this.httpClient.get(`http://${address}/api/system/info`),
         asic: fetchAsic ? this.httpClient.get(`http://${address}/api/system/asic`).pipe(catchError(() => of({}))) : of({})
       }).pipe(
         map(({ info, asic }) => {
-          if (info === null) {
-            return null;
-          }
 
           const existingDevice = this.swarm.find(device => device.connectionAddress === address);
           const result = {
@@ -423,10 +420,14 @@ private isIpAddress(value: string): boolean {
       asicCount: existingDevice?.asicCount || 1,
       hashRate: 0,
       sharesAccepted: 0,
+      sharesRejected: 0,
       power: 0,
       voltage: 0,
       temp: 0,
+      temp2: 0,
+      vrTemp: 0,
       bestDiff: 0,
+      bestSessionDiff: 0,
       version: '',
       uptimeSeconds: 0,
       poolDifficulty: 0,
