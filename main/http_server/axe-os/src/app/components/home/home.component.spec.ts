@@ -208,18 +208,18 @@ describe('HomeComponent', () => {
     it('should set stale data error when visible and last message is old', () => {
       spyOnProperty(document, 'visibilityState', 'get').and.returnValue('visible');
 
-      component['lastMessageTime'] = Date.now() - 15000;
+      component['lastMessageTime'] = Date.now() - 10000;
       component.systemInfoError$.next({ duration: 0, startTime: null });
 
       component['checkStaleData']();
 
-      expect(component.systemInfoError$.value.duration).toBe(15);
+      expect(component.systemInfoError$.value.duration).toBe(10);
     });
 
     it('should NOT set stale data error when hidden and last message is old', () => {
       spyOnProperty(document, 'visibilityState', 'get').and.returnValue('hidden');
 
-      component['lastMessageTime'] = Date.now() - 15000;
+      component['lastMessageTime'] = Date.now() - 10000;
       component.systemInfoError$.next({ duration: 0, startTime: null });
 
       component['checkStaleData']();
@@ -230,9 +230,9 @@ describe('HomeComponent', () => {
     it('should reset lastMessageTime and clear stale error when transitioning to visible', () => {
       spyOnProperty(document, 'visibilityState', 'get').and.returnValue('visible');
 
-      const initialTime = Date.now() - 15000;
+      const initialTime = Date.now() - 10000;
       component['lastMessageTime'] = initialTime;
-      component.systemInfoError$.next({ duration: 15, startTime: initialTime });
+      component.systemInfoError$.next({ duration: 10, startTime: initialTime });
 
       component.onVisibilityChange();
 
