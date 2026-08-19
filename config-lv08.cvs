@@ -18,7 +18,7 @@ fbstratumcert,data,string,x
 fbstratumuser,data,string,
 fbstratumpass,data,string,x
 fbstratumdiff,data,u16,1000
-fbstratumxnsum,data,u16,0
+stratumfbxnsub,data,u16,0
 asicfrequency,data,u16,485
 asicvoltage,data,u16,1200
 asicmodel,data,string,BM1366
