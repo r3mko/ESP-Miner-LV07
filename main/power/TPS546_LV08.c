@@ -25,17 +25,29 @@
 #define ACK_VALUE      0x0
 #define NACK_VALUE     0x1
 #define MAX_BLOCK_LEN  32
+#define TPS546_LV08_POWER_GOOD_GRACE_MS 250
+#define TPS546_LV08_I2C_TIMEOUT_MS 500
 
 static uint8_t DEVICE_ID_TPS546D24A[] = {0x54, 0x49, 0x54, 0x6D, 0x24, 0x41};
 static uint8_t DEVICE_ID_TPS546D24S[] = {0x54, 0x49, 0x54, 0x6D, 0x24, 0x62};
 // static uint8_t DEVICE_ID_TPS546B24A[] = {0x54, 0x49, 0x54, 0x6B, 0x24, 0x41};
 // static uint8_t DEVICE_ID_TPS546B24S[] = {0x54, 0x49, 0x54, 0x6B, 0x24, 0x62};
 
-//static i2c_master_dev_handle_t tps546_i2c_handle;
-
-static TPS546_CONFIG tps546_config;
+static i2c_master_dev_handle_t tps546_alert_i2c_handle;
 
 static esp_err_t TPS546_parse_status(tps546_t *vreg, uint16_t);
+
+static esp_err_t TPS546_read_alert_response(uint8_t *alert_response)
+{
+    if (tps546_alert_i2c_handle == NULL) {
+        ESP_RETURN_ON_ERROR(i2c_bitaxe_add_device(TPS546_LV08_I2CADDR_ALERT,
+                                                  &tps546_alert_i2c_handle,
+                                                  "TPS546_LV08_ALERT"),
+                            "TPS546_LV08", "Failed to add TPS546 SMBus alert address");
+    }
+
+    return i2c_master_receive(tps546_alert_i2c_handle, alert_response, 1, TPS546_LV08_I2C_TIMEOUT_MS);
+}
 
 static esp_err_t validate_vreg(const tps546_t *vreg)
 {
@@ -339,6 +351,47 @@ static uint16_t float_2_ulinear16(tps546_t *vreg, float value)
     return result;
 }
 
+static esp_err_t TPS546_write_vout_limit_ratios(tps546_t *vreg, float vout_command)
+{
+    ESP_LOGI(vreg->TAG, "Setting VOUT_OV_FAULT_LIMIT: %.2fx (%.2fV)", TPS546_LV08_INIT_VOUT_OV_FAULT_LIMIT,
+             vout_command * TPS546_LV08_INIT_VOUT_OV_FAULT_LIMIT);
+    ESP_RETURN_ON_ERROR(smb_write_word(vreg, PMBUS_VOUT_OV_FAULT_LIMIT,
+                                       float_2_ulinear16(vreg, TPS546_LV08_INIT_VOUT_OV_FAULT_LIMIT)),
+                        vreg->TAG, "Failed to write VOUT_OV_FAULT_LIMIT");
+
+    ESP_LOGI(vreg->TAG, "Setting VOUT_OV_WARN_LIMIT: %.2fx (%.2fV)", TPS546_LV08_INIT_VOUT_OV_WARN_LIMIT,
+             vout_command * TPS546_LV08_INIT_VOUT_OV_WARN_LIMIT);
+    ESP_RETURN_ON_ERROR(smb_write_word(vreg, PMBUS_VOUT_OV_WARN_LIMIT,
+                                       float_2_ulinear16(vreg, TPS546_LV08_INIT_VOUT_OV_WARN_LIMIT)),
+                        vreg->TAG, "Failed to write VOUT_OV_WARN_LIMIT");
+
+    ESP_LOGI(vreg->TAG, "Setting VOUT_MARGIN_HIGH: %.2fx (%.2fV)", TPS546_LV08_INIT_VOUT_MARGIN_HIGH,
+             vout_command * TPS546_LV08_INIT_VOUT_MARGIN_HIGH);
+    ESP_RETURN_ON_ERROR(smb_write_word(vreg, PMBUS_VOUT_MARGIN_HIGH,
+                                       float_2_ulinear16(vreg, TPS546_LV08_INIT_VOUT_MARGIN_HIGH)),
+                        vreg->TAG, "Failed to write VOUT_MARGIN_HIGH");
+
+    ESP_LOGI(vreg->TAG, "Setting VOUT_MARGIN_LOW: %.2fx (%.2fV)", TPS546_LV08_INIT_VOUT_MARGIN_LOW,
+             vout_command * TPS546_LV08_INIT_VOUT_MARGIN_LOW);
+    ESP_RETURN_ON_ERROR(smb_write_word(vreg, PMBUS_VOUT_MARGIN_LOW,
+                                       float_2_ulinear16(vreg, TPS546_LV08_INIT_VOUT_MARGIN_LOW)),
+                        vreg->TAG, "Failed to write VOUT_MARGIN_LOW");
+
+    ESP_LOGI(vreg->TAG, "Setting VOUT_UV_WARN_LIMIT: %.2fx (%.2fV)", TPS546_LV08_INIT_VOUT_UV_WARN_LIMIT,
+             vout_command * TPS546_LV08_INIT_VOUT_UV_WARN_LIMIT);
+    ESP_RETURN_ON_ERROR(smb_write_word(vreg, PMBUS_VOUT_UV_WARN_LIMIT,
+                                       float_2_ulinear16(vreg, TPS546_LV08_INIT_VOUT_UV_WARN_LIMIT)),
+                        vreg->TAG, "Failed to write VOUT_UV_WARN_LIMIT");
+
+    ESP_LOGI(vreg->TAG, "Setting VOUT_UV_FAULT_LIMIT: %.2fx (%.2fV)", TPS546_LV08_INIT_VOUT_UV_FAULT_LIMIT,
+             vout_command * TPS546_LV08_INIT_VOUT_UV_FAULT_LIMIT);
+    ESP_RETURN_ON_ERROR(smb_write_word(vreg, PMBUS_VOUT_UV_FAULT_LIMIT,
+                                       float_2_ulinear16(vreg, TPS546_LV08_INIT_VOUT_UV_FAULT_LIMIT)),
+                        vreg->TAG, "Failed to write VOUT_UV_FAULT_LIMIT");
+
+    return ESP_OK;
+}
+
 /*--- Public TPS546 functions ---*/
 
 /**
@@ -362,10 +415,20 @@ esp_err_t TPS546_LV08_init(tps546_t *vreg, uint8_t i2c_address, const char *TAG,
     vreg->last_vout = 0.0f;
     vreg->last_temp = 0.0f;
     vreg->fault_active = false;
-
-    tps546_config = config;
+    vreg->config = config;
+    vreg->power_good_grace_until = 0;
 
     ESP_LOGI(vreg->TAG, "Initializing the core voltage regulator at 0x%02X", i2c_address);
+
+    uint8_t alert_response = 0;
+    esp_err_t alert_err = TPS546_read_alert_response(&alert_response);
+    if (alert_err == ESP_OK) {
+        ESP_LOGW(vreg->TAG, "SMBus alert response raw=0x%02X decoded 7-bit address=0x%02X",
+                 alert_response, alert_response >> 1);
+    } else {
+        ESP_LOGI(vreg->TAG, "No SMBus alert response read: %s", esp_err_to_name(alert_err));
+    }
+
     ESP_RETURN_ON_ERROR(i2c_bitaxe_add_device(i2c_address, &vreg->dev_handle, vreg->TAG), vreg->TAG, "Failed to add TPS546 I2C");
 
     // 1) Power-up guard (PMBus ready after AVIN UVLO + ~8 ms)
@@ -570,95 +633,97 @@ void TPS546_LV08_write_entire_config(tps546_t *vreg)
 
 
     // STACK_CONFIG
-    ESP_LOGI(vreg->TAG, "Setting STACK_CONFIG: %04X", tps546_config.TPS546_INIT_STACK_CONFIG);
-    smb_write_word(vreg, PMBUS_STACK_CONFIG, tps546_config.TPS546_INIT_STACK_CONFIG);
+    ESP_LOGI(vreg->TAG, "Setting STACK_CONFIG: %04X", vreg->config.TPS546_INIT_STACK_CONFIG);
+    smb_write_word(vreg, PMBUS_STACK_CONFIG, vreg->config.TPS546_INIT_STACK_CONFIG);
 
     // SYNC_CONFIG
-    ESP_LOGI(vreg->TAG, "Setting SYNC_CONFIG: %02X", tps546_config.TPS546_INIT_SYNC_CONFIG);
-    smb_write_byte(vreg, PMBUS_SYNC_CONFIG, tps546_config.TPS546_INIT_SYNC_CONFIG);
+    ESP_LOGI(vreg->TAG, "Setting SYNC_CONFIG: %02X", vreg->config.TPS546_INIT_SYNC_CONFIG);
+    smb_write_byte(vreg, PMBUS_SYNC_CONFIG, vreg->config.TPS546_INIT_SYNC_CONFIG);
 
 
     /* Phase */
-    ESP_LOGI(vreg->TAG, "Setting PHASE: %02X", tps546_config.TPS546_INIT_PHASE);
-    smb_write_byte(vreg, PMBUS_PHASE, tps546_config.TPS546_INIT_PHASE);
+    ESP_LOGI(vreg->TAG, "Setting PHASE: %02X", vreg->config.TPS546_INIT_PHASE);
+    smb_write_byte(vreg, PMBUS_PHASE, vreg->config.TPS546_INIT_PHASE);
 
     /* Switch frequency */
-    uint16_t freq = tps546_config.TPS546_INIT_FREQUENCY ? tps546_config.TPS546_INIT_FREQUENCY : TPS546_LV08_DEFAULT_FREQUENCY;
+    uint16_t freq = vreg->config.TPS546_INIT_FREQUENCY ? vreg->config.TPS546_INIT_FREQUENCY : TPS546_DEFAULT_FREQUENCY;
     ESP_LOGI(vreg->TAG, "Setting FREQUENCY: %dKHz", freq);
     smb_write_word(vreg, PMBUS_FREQUENCY_SWITCH, int_2_slinear11(vreg, freq));
 
-    if(tps546_config.TPS546_INIT_COMPENSATION_CONFIG[0] != 0 &&
-       tps546_config.TPS546_INIT_COMPENSATION_CONFIG[1] != 0 &&
-       tps546_config.TPS546_INIT_COMPENSATION_CONFIG[2] != 0 &&
-       tps546_config.TPS546_INIT_COMPENSATION_CONFIG[3] != 0 &&
-       tps546_config.TPS546_INIT_COMPENSATION_CONFIG[4] != 0 ) {
+    if(vreg->config.TPS546_INIT_COMPENSATION_CONFIG[0] != 0 &&
+       vreg->config.TPS546_INIT_COMPENSATION_CONFIG[1] != 0 &&
+       vreg->config.TPS546_INIT_COMPENSATION_CONFIG[2] != 0 &&
+       vreg->config.TPS546_INIT_COMPENSATION_CONFIG[3] != 0 &&
+       vreg->config.TPS546_INIT_COMPENSATION_CONFIG[4] != 0 ) {
         // COMPENSATION_CONFIG
         ESP_LOGI(vreg->TAG, "Setting COMPENSATION_CONFIG: %02X %02X %02X %02X %02X",
-            tps546_config.TPS546_INIT_COMPENSATION_CONFIG[0], tps546_config.TPS546_INIT_COMPENSATION_CONFIG[1],
-            tps546_config.TPS546_INIT_COMPENSATION_CONFIG[2], tps546_config.TPS546_INIT_COMPENSATION_CONFIG[3],
-            tps546_config.TPS546_INIT_COMPENSATION_CONFIG[4]);
-        smb_write_block(vreg, PMBUS_COMPENSATION_CONFIG, tps546_config.TPS546_INIT_COMPENSATION_CONFIG, 5);
+            vreg->config.TPS546_INIT_COMPENSATION_CONFIG[0], vreg->config.TPS546_INIT_COMPENSATION_CONFIG[1],
+            vreg->config.TPS546_INIT_COMPENSATION_CONFIG[2], vreg->config.TPS546_INIT_COMPENSATION_CONFIG[3],
+            vreg->config.TPS546_INIT_COMPENSATION_CONFIG[4]);
+        esp_err_t comp_err = smb_write_block(vreg, PMBUS_COMPENSATION_CONFIG,
+                                             vreg->config.TPS546_INIT_COMPENSATION_CONFIG,
+                                             5);
+        if (comp_err != ESP_OK) {
+            uint8_t status_cml = 0;
+            uint16_t status_word = 0;
+
+            if (smb_read_byte(vreg, PMBUS_STATUS_CML, &status_cml) == ESP_OK) {
+                ESP_LOGE(vreg->TAG, "COMPENSATION_CONFIG write failed; STATUS_CML=%02X", status_cml);
+            }
+
+            if (smb_read_word(vreg, PMBUS_STATUS_WORD, &status_word) == ESP_OK) {
+                ESP_LOGE(vreg->TAG, "COMPENSATION_CONFIG write failed; STATUS_WORD=%04X", status_word);
+            }
+        } else {
+            ESP_LOGI(vreg->TAG, "COMPENSATION_CONFIG write accepted");
+        }
 
     }
 
     /* vin voltage */
 
     //deal with the UV_WARN_LIMIT bug
-    if (tps546_config.TPS546_INIT_VIN_UV_WARN_LIMIT > 0) {
-        ESP_LOGI(vreg->TAG, "Setting VIN_UV_WARN_LIMIT: %.2f", tps546_config.TPS546_INIT_VIN_UV_WARN_LIMIT);
-        smb_write_word(vreg, PMBUS_VIN_UV_WARN_LIMIT, float_2_slinear11(vreg, tps546_config.TPS546_INIT_VIN_UV_WARN_LIMIT));
+    if (vreg->config.TPS546_INIT_VIN_UV_WARN_LIMIT > 0) {
+        ESP_LOGI(vreg->TAG, "Setting VIN_UV_WARN_LIMIT: %.2f", vreg->config.TPS546_INIT_VIN_UV_WARN_LIMIT);
+        smb_write_word(vreg, PMBUS_VIN_UV_WARN_LIMIT, float_2_slinear11(vreg, vreg->config.TPS546_INIT_VIN_UV_WARN_LIMIT));
     }
 
-    ESP_LOGI(vreg->TAG, "Setting VIN_ON: %.2fV", tps546_config.TPS546_INIT_VIN_ON);
-    smb_write_word(vreg, PMBUS_VIN_ON, float_2_slinear11(vreg, tps546_config.TPS546_INIT_VIN_ON));
+    ESP_LOGI(vreg->TAG, "Setting VIN_ON: %.2fV", vreg->config.TPS546_INIT_VIN_ON);
+    smb_write_word(vreg, PMBUS_VIN_ON, float_2_slinear11(vreg, vreg->config.TPS546_INIT_VIN_ON));
 
-    ESP_LOGI(vreg->TAG, "Setting VIN_OFF: %.2fV", tps546_config.TPS546_INIT_VIN_OFF);
-    smb_write_word(vreg, PMBUS_VIN_OFF, float_2_slinear11(vreg, tps546_config.TPS546_INIT_VIN_OFF));
+    ESP_LOGI(vreg->TAG, "Setting VIN_OFF: %.2fV", vreg->config.TPS546_INIT_VIN_OFF);
+    smb_write_word(vreg, PMBUS_VIN_OFF, float_2_slinear11(vreg, vreg->config.TPS546_INIT_VIN_OFF));
 
-    ESP_LOGI(vreg->TAG, "Setting VIN_OV_FAULT_LIMIT: %.2fV", tps546_config.TPS546_INIT_VIN_OV_FAULT_LIMIT);
-    smb_write_word(vreg, PMBUS_VIN_OV_FAULT_LIMIT, float_2_slinear11(vreg, tps546_config.TPS546_INIT_VIN_OV_FAULT_LIMIT));
+    ESP_LOGI(vreg->TAG, "Setting VIN_OV_FAULT_LIMIT: %.2fV", vreg->config.TPS546_INIT_VIN_OV_FAULT_LIMIT);
+    smb_write_word(vreg, PMBUS_VIN_OV_FAULT_LIMIT, float_2_slinear11(vreg, vreg->config.TPS546_INIT_VIN_OV_FAULT_LIMIT));
 
     ESP_LOGI(vreg->TAG, "Setting VIN_OV_FAULT_RESPONSE: %02X", TPS546_LV08_INIT_VIN_OV_FAULT_RESPONSE);
     smb_write_byte(vreg, PMBUS_VIN_OV_FAULT_RESPONSE, TPS546_LV08_INIT_VIN_OV_FAULT_RESPONSE);
 
     /* vout voltage */
-    ESP_LOGI(vreg->TAG, "Setting VOUT SCALE: %.2f", tps546_config.TPS546_INIT_SCALE_LOOP);
-    smb_write_word(vreg, PMBUS_VOUT_SCALE_LOOP, float_2_slinear11(vreg, tps546_config.TPS546_INIT_SCALE_LOOP));
+    ESP_LOGI(vreg->TAG, "Setting VOUT SCALE: %.2f", vreg->config.TPS546_INIT_SCALE_LOOP);
+    smb_write_word(vreg, PMBUS_VOUT_SCALE_LOOP, float_2_slinear11(vreg, vreg->config.TPS546_INIT_SCALE_LOOP));
 
-    ESP_LOGI(vreg->TAG, "Setting VOUT_COMMAND: %.2fV", tps546_config.TPS546_INIT_VOUT_COMMAND);
-    smb_write_word(vreg, PMBUS_VOUT_COMMAND, float_2_ulinear16(vreg, tps546_config.TPS546_INIT_VOUT_COMMAND));
+    ESP_LOGI(vreg->TAG, "Setting VOUT_COMMAND: %.2fV", vreg->config.TPS546_INIT_VOUT_COMMAND);
+    smb_write_word(vreg, PMBUS_VOUT_COMMAND, float_2_ulinear16(vreg, vreg->config.TPS546_INIT_VOUT_COMMAND));
 
-    ESP_LOGI(vreg->TAG, "Setting VOUT_MAX: %.2fV", tps546_config.TPS546_INIT_VOUT_MAX);
-    smb_write_word(vreg, PMBUS_VOUT_MAX, float_2_ulinear16(vreg, tps546_config.TPS546_INIT_VOUT_MAX));
+    ESP_LOGI(vreg->TAG, "Setting VOUT_MAX: %.2fV", vreg->config.TPS546_INIT_VOUT_MAX);
+    smb_write_word(vreg, PMBUS_VOUT_MAX, float_2_ulinear16(vreg, vreg->config.TPS546_INIT_VOUT_MAX));
 
-    ESP_LOGI(vreg->TAG, "Setting VOUT_MIN: %.2fV", tps546_config.TPS546_INIT_VOUT_MIN);
-    smb_write_word(vreg, PMBUS_VOUT_MIN, float_2_ulinear16(vreg, tps546_config.TPS546_INIT_VOUT_MIN));
+    ESP_LOGI(vreg->TAG, "Setting VOUT_MIN: %.2fV", vreg->config.TPS546_INIT_VOUT_MIN);
+    smb_write_word(vreg, PMBUS_VOUT_MIN, float_2_ulinear16(vreg, vreg->config.TPS546_INIT_VOUT_MIN));
 
-    ESP_LOGI(vreg->TAG, "Setting VOUT_OV_FAULT_LIMIT: %.2f", TPS546_LV08_INIT_VOUT_OV_FAULT_LIMIT);
-    smb_write_word(vreg, PMBUS_VOUT_OV_FAULT_LIMIT, float_2_ulinear16(vreg, TPS546_LV08_INIT_VOUT_OV_FAULT_LIMIT));
-
-    ESP_LOGI(vreg->TAG, "Setting VOUT_OV_WARN_LIMIT: %.2f", TPS546_LV08_INIT_VOUT_OV_WARN_LIMIT);
-    smb_write_word(vreg, PMBUS_VOUT_OV_WARN_LIMIT, float_2_ulinear16(vreg, TPS546_LV08_INIT_VOUT_OV_WARN_LIMIT));
-
-    ESP_LOGI(vreg->TAG, "Setting VOUT_MARGIN_HIGH: %.2f", TPS546_LV08_INIT_VOUT_MARGIN_HIGH);
-    smb_write_word(vreg, PMBUS_VOUT_MARGIN_HIGH, float_2_ulinear16(vreg, TPS546_LV08_INIT_VOUT_MARGIN_HIGH));
-
-    ESP_LOGI(vreg->TAG, "Setting VOUT_MARGIN_LOW: %.2f", TPS546_LV08_INIT_VOUT_MARGIN_LOW);
-    smb_write_word(vreg, PMBUS_VOUT_MARGIN_LOW, float_2_ulinear16(vreg, TPS546_LV08_INIT_VOUT_MARGIN_LOW));
-
-    ESP_LOGI(vreg->TAG, "Setting VOUT_UV_WARN_LIMIT: %.2f", TPS546_LV08_INIT_VOUT_UV_WARN_LIMIT);
-    smb_write_word(vreg, PMBUS_VOUT_UV_WARN_LIMIT, float_2_ulinear16(vreg, TPS546_LV08_INIT_VOUT_UV_WARN_LIMIT));
-
-    ESP_LOGI(vreg->TAG, "Setting VOUT_UV_FAULT_LIMIT: %.2f", TPS546_LV08_INIT_VOUT_UV_FAULT_LIMIT);
-    smb_write_word(vreg, PMBUS_VOUT_UV_FAULT_LIMIT, float_2_ulinear16(vreg, TPS546_LV08_INIT_VOUT_UV_FAULT_LIMIT));
+    if (TPS546_write_vout_limit_ratios(vreg, vreg->config.TPS546_INIT_VOUT_COMMAND) != ESP_OK) {
+        ESP_LOGE(vreg->TAG, "Failed to write VOUT limit ratios");
+    }
 
     /* iout current */
     ESP_LOGI(vreg->TAG, "----- IOUT");
-    ESP_LOGI(vreg->TAG, "Setting IOUT_OC_WARN_LIMIT: %.2fA", tps546_config.TPS546_INIT_IOUT_OC_WARN_LIMIT);
-    smb_write_word(vreg, PMBUS_IOUT_OC_WARN_LIMIT, float_2_slinear11(vreg, tps546_config.TPS546_INIT_IOUT_OC_WARN_LIMIT));
+    ESP_LOGI(vreg->TAG, "Setting IOUT_OC_WARN_LIMIT: %.2fA", vreg->config.TPS546_INIT_IOUT_OC_WARN_LIMIT);
+    smb_write_word(vreg, PMBUS_IOUT_OC_WARN_LIMIT, float_2_slinear11(vreg, vreg->config.TPS546_INIT_IOUT_OC_WARN_LIMIT));
 
-    ESP_LOGI(vreg->TAG, "Setting IOUT_OC_FAULT_LIMIT: %.2fA", tps546_config.TPS546_INIT_IOUT_OC_FAULT_LIMIT);
-    smb_write_word(vreg, PMBUS_IOUT_OC_FAULT_LIMIT, float_2_slinear11(vreg, tps546_config.TPS546_INIT_IOUT_OC_FAULT_LIMIT));
+    ESP_LOGI(vreg->TAG, "Setting IOUT_OC_FAULT_LIMIT: %.2fA", vreg->config.TPS546_INIT_IOUT_OC_FAULT_LIMIT);
+    smb_write_word(vreg, PMBUS_IOUT_OC_FAULT_LIMIT, float_2_slinear11(vreg, vreg->config.TPS546_INIT_IOUT_OC_FAULT_LIMIT));
 
     ESP_LOGI(vreg->TAG, "Setting IOUT_OC_FAULT_RESPONSE: %02x", TPS546_LV08_INIT_IOUT_OC_FAULT_RESPONSE);
     smb_write_byte(vreg, PMBUS_IOUT_OC_FAULT_RESPONSE, TPS546_LV08_INIT_IOUT_OC_FAULT_RESPONSE);
@@ -692,7 +757,7 @@ void TPS546_LV08_write_entire_config(tps546_t *vreg)
     //smb_write_block(PMBUS_COMPENSATION_CONFIG, COMPENSATION_CONFIG, 5);
 
     /* configure the bootup behavior regarding pin detect values vs NVM values */
-    ESP_LOGI(vreg->TAG, "Setting PIN_DETECT_OVERRIDE");
+    ESP_LOGI(vreg->TAG, "Setting PIN_DETECT_OVERRIDE: %04X", TPS546_LV08_INIT_PIN_DETECT_OVERRIDE);
     smb_write_word(vreg, PMBUS_PIN_DETECT_OVERRIDE, TPS546_LV08_INIT_PIN_DETECT_OVERRIDE);
 
     /* TODO write new MFR_REVISION number to reflect these parameters */
@@ -837,6 +902,65 @@ float TPS546_LV08_get_vout(tps546_t *vreg)
     }
 }
 
+esp_err_t TPS546_LV08_check_phase_currents(tps546_t *vreg, uint8_t phase_count, float minimum_current_a)
+{
+    esp_err_t result = validate_vreg(vreg);
+    if (result != ESP_OK) {
+        return result;
+    }
+
+    uint8_t original_phase = 0;
+    result = smb_read_byte(vreg, PMBUS_PHASE, &original_phase);
+    if (result != ESP_OK) {
+        ESP_LOGE(vreg->TAG, "Could not read PHASE before buck participation test");
+        return result;
+    }
+
+    for (uint8_t phase = 0; phase < phase_count; phase++) {
+        uint16_t raw_iout = 0;
+
+        result = smb_write_byte(vreg, PMBUS_PHASE, phase);
+        if (result == ESP_OK) {
+            result = smb_read_word(vreg, PMBUS_READ_IOUT, &raw_iout);
+        }
+        if (result != ESP_OK) {
+            ESP_LOGE(vreg->TAG, "Buck phase %u current read failed: %s", phase, esp_err_to_name(result));
+            break;
+        }
+
+        float current_a = slinear11_2_float(raw_iout);
+        ESP_LOGI(vreg->TAG, "Buck phase %u current: %.3f A", phase, current_a);
+        if (current_a < minimum_current_a) {
+            ESP_LOGE(vreg->TAG, "Buck phase %u is not participating (%.3f A, minimum %.3f A)",
+                     phase, current_a, minimum_current_a);
+            result = ESP_FAIL;
+            break;
+        }
+    }
+
+    esp_err_t restore_result = smb_write_byte(vreg, PMBUS_PHASE, original_phase);
+    if (restore_result != ESP_OK) {
+        ESP_LOGE(vreg->TAG, "Could not restore PHASE=0x%02X after buck participation test: %s",
+                 original_phase, esp_err_to_name(restore_result));
+        return restore_result;
+    }
+
+    return result;
+}
+
+uint8_t TPS546_LV08_get_phase_count(tps546_t *vreg)
+{
+    if (validate_vreg(vreg) != ESP_OK) {
+        return 1;
+    }
+
+    uint16_t stack_config = 0;
+    if (smb_read_word(vreg, PMBUS_STACK_CONFIG, &stack_config) == ESP_OK) {
+        return (stack_config & 0x07) + 1;
+    }
+    return (vreg->config.TPS546_INIT_STACK_CONFIG & 0x07) + 1;
+}
+
 esp_err_t TPS546_LV08_check_status(tps546_t *vreg) {
     esp_err_t err = validate_vreg(vreg);
     if (err != ESP_OK) {
@@ -847,11 +971,31 @@ esp_err_t TPS546_LV08_check_status(tps546_t *vreg) {
 
     ESP_RETURN_ON_ERROR(smb_read_word(vreg, PMBUS_STATUS_WORD, &status), vreg->TAG, "Failed to read STATUS_WORD");
 
+    if ((status & TPS546_LV08_STATUS_OFF) && xTaskGetTickCount() < vreg->power_good_grace_until) {
+        uint8_t operation = 0;
+        const uint16_t hard_faults = TPS546_LV08_STATUS_VOUT_OV | TPS546_LV08_STATUS_IOUT_OC |
+                                     TPS546_LV08_STATUS_VIN_UV | TPS546_LV08_STATUS_TEMP |
+                                     TPS546_LV08_STATUS_CML;
+        if (!(status & hard_faults) && smb_read_byte(vreg, PMBUS_OPERATION, &operation) == ESP_OK &&
+            operation == TPS546_LV08_OPERATION_ON) {
+            vreg->fault_active = false;
+            ESP_LOGI(vreg->TAG, "Waiting for TPS546 power-good after enable, STATUS_WORD: 0x%04X", status);
+            return ESP_OK;
+        }
+    }
+
     //determine if this is a fault we care about
     bool previous_fault = vreg->fault_active;
     vreg->fault_active = (status & (TPS546_LV08_STATUS_OFF | TPS546_LV08_STATUS_VOUT_OV | TPS546_LV08_STATUS_IOUT_OC | TPS546_LV08_STATUS_VIN_UV | TPS546_LV08_STATUS_TEMP)) != 0;
 
     if (vreg->fault_active && !previous_fault) {
+        TPS546_LV08_StatusSnapshot snapshot = {0};
+        esp_err_t snapshot_err = TPS546_LV08_snapshot_status(vreg, &snapshot);
+        if (snapshot_err == ESP_OK) {
+            TPS546_LV08_log_snapshot(vreg, &snapshot);
+        } else {
+            ESP_LOGE(vreg->TAG, "Failed to snapshot TPS546 status: %s", esp_err_to_name(snapshot_err));
+        }
         ESP_RETURN_ON_ERROR(TPS546_parse_status(vreg, status), vreg->TAG, "Failed to parse STATUS_WORD");
     }
 
@@ -944,8 +1088,6 @@ static esp_err_t TPS546_parse_status(tps546_t *vreg, uint16_t status) {
     if (status & TPS546_LV08_STATUS_NONE) {
         //ESP_LOGI(vreg->TAG, "TPS546 Status Word Error");
         //The host should check the STATUS_WORD for more information.
-    } else {
-        return ESP_OK;
     }
 
     //STATUS_WORD bits
@@ -1087,9 +1229,10 @@ esp_err_t TPS546_LV08_set_vout(tps546_t *vreg, float volts) {
             ESP_LOGE(vreg->TAG, "Could not turn off Vout");
             return ESP_FAIL;
         }
+        vreg->power_good_grace_until = 0;
     } else {
         /* make sure we're in range */
-        if ((volts < tps546_config.TPS546_INIT_VOUT_MIN) || (volts > tps546_config.TPS546_INIT_VOUT_MAX)) {
+        if ((volts < vreg->config.TPS546_INIT_VOUT_MIN) || (volts > vreg->config.TPS546_INIT_VOUT_MAX)) {
             ESP_LOGE(vreg->TAG, "Voltage requested (%f V) is out of range", volts);
             return ESP_FAIL;
         } else {
@@ -1102,11 +1245,15 @@ esp_err_t TPS546_LV08_set_vout(tps546_t *vreg, float volts) {
 
             ESP_LOGI(vreg->TAG, "Vout changed to %1.2f V", volts);
 
+            ESP_RETURN_ON_ERROR(TPS546_write_vout_limit_ratios(vreg, volts), vreg->TAG,
+                                "Could not update Vout limit ratios");
+
             /* turn on output */
-           if (smb_write_byte(vreg, PMBUS_OPERATION, TPS546_LV08_OPERATION_ON) != ESP_OK) {
+            if (smb_write_byte(vreg, PMBUS_OPERATION, TPS546_LV08_OPERATION_ON) != ESP_OK) {
                 ESP_LOGE(vreg->TAG, "Could not turn on Vout");
                 return ESP_FAIL;
             }
+            vreg->power_good_grace_until = xTaskGetTickCount() + pdMS_TO_TICKS(TPS546_LV08_POWER_GOOD_GRACE_MS);
 
             //make sure operation was written correctly
             if (smb_read_byte(vreg, PMBUS_OPERATION, &value8) != ESP_OK) {
@@ -1166,17 +1313,20 @@ void TPS546_LV08_show_voltage_settings(tps546_t *vreg)
     /* VOUT_OV_FAULT_LIMIT */
     smb_read_word(vreg, PMBUS_VOUT_OV_FAULT_LIMIT, &u16_value);
     f_value = ulinear16_2_float(vreg, u16_value);
-    ESP_LOGI(vreg->TAG, "read VOUT_OV_FAULT_LIMIT: %.2fV", f_value * tps546_config.TPS546_INIT_VOUT_COMMAND);
+    ESP_LOGI(vreg->TAG, "read VOUT_OV_FAULT_LIMIT: %.2fx (%.2fV)", f_value,
+             f_value * vreg->config.TPS546_INIT_VOUT_COMMAND);
 
     /* VOUT_OV_WARN_LIMIT */
     smb_read_word(vreg, PMBUS_VOUT_OV_WARN_LIMIT, &u16_value);
     f_value = ulinear16_2_float(vreg, u16_value);
-    ESP_LOGI(vreg->TAG, "read VOUT_OV_WARN_LIMIT: %.2fV", f_value * tps546_config.TPS546_INIT_VOUT_COMMAND);
+    ESP_LOGI(vreg->TAG, "read VOUT_OV_WARN_LIMIT: %.2fx (%.2fV)", f_value,
+             f_value * vreg->config.TPS546_INIT_VOUT_COMMAND);
 
     /* VOUT_MARGIN_HIGH */
     smb_read_word(vreg, PMBUS_VOUT_MARGIN_HIGH, &u16_value);
     f_value = ulinear16_2_float(vreg, u16_value);
-    ESP_LOGI(vreg->TAG, "read VOUT_MARGIN_HIGH: %.2fV", f_value * tps546_config.TPS546_INIT_VOUT_COMMAND);
+    ESP_LOGI(vreg->TAG, "read VOUT_MARGIN_HIGH: %.2fx (%.2fV)", f_value,
+             f_value * vreg->config.TPS546_INIT_VOUT_COMMAND);
 
     /* --- VOUT_COMMAND --- */
     smb_read_word(vreg, PMBUS_VOUT_COMMAND, &u16_value);
@@ -1186,17 +1336,20 @@ void TPS546_LV08_show_voltage_settings(tps546_t *vreg)
     /* VOUT_MARGIN_LOW */
     smb_read_word(vreg, PMBUS_VOUT_MARGIN_LOW, &u16_value);
     f_value = ulinear16_2_float(vreg, u16_value);
-    ESP_LOGI(vreg->TAG, "read VOUT_MARGIN_LOW: %.2fV", f_value * tps546_config.TPS546_INIT_VOUT_COMMAND);
+    ESP_LOGI(vreg->TAG, "read VOUT_MARGIN_LOW: %.2fx (%.2fV)", f_value,
+             f_value * vreg->config.TPS546_INIT_VOUT_COMMAND);
 
     /* VOUT_UV_WARN_LIMIT */
     smb_read_word(vreg, PMBUS_VOUT_UV_WARN_LIMIT, &u16_value);
     f_value = ulinear16_2_float(vreg, u16_value);
-    ESP_LOGI(vreg->TAG, "read VOUT_UV_WARN_LIMIT: %.2fV", f_value * tps546_config.TPS546_INIT_VOUT_COMMAND);
+    ESP_LOGI(vreg->TAG, "read VOUT_UV_WARN_LIMIT: %.2fx (%.2fV)", f_value,
+             f_value * vreg->config.TPS546_INIT_VOUT_COMMAND);
 
     /* VOUT_UV_FAULT_LIMIT */
     smb_read_word(vreg, PMBUS_VOUT_UV_FAULT_LIMIT, &u16_value);
     f_value = ulinear16_2_float(vreg, u16_value);
-    ESP_LOGI(vreg->TAG, "read VOUT_UV_FAULT_LIMIT: %.2fV", f_value * tps546_config.TPS546_INIT_VOUT_COMMAND);
+    ESP_LOGI(vreg->TAG, "read VOUT_UV_FAULT_LIMIT: %.2fx (%.2fV)", f_value,
+             f_value * vreg->config.TPS546_INIT_VOUT_COMMAND);
 
     /* VOUT_MIN */
     smb_read_word(vreg, PMBUS_VOUT_MIN, &u16_value);
@@ -1259,9 +1412,37 @@ esp_err_t TPS546_LV08_snapshot_status(tps546_t *vreg, TPS546_LV08_StatusSnapshot
     if (err != ESP_OK) { return err; }
     s->on_off_config = u8;
 
+    err = smb_read_byte(vreg, PMBUS_PHASE, &u8);
+    if (err != ESP_OK) { return err; }
+    s->phase = u8;
+
+    err = smb_read_word(vreg, PMBUS_STACK_CONFIG, &u16);
+    if (err != ESP_OK) { return err; }
+    s->stack_config = u16;
+
+    err = smb_read_byte(vreg, PMBUS_SYNC_CONFIG, &u8);
+    if (err != ESP_OK) { return err; }
+    s->sync_config = u8;
+
+    err = smb_read_word(vreg, PMBUS_INTERLEAVE, &u16);
+    if (err != ESP_OK) { return err; }
+    s->interleave = u16;
+
     err = smb_read_word(vreg, PMBUS_VOUT_COMMAND, &u16);
     if (err != ESP_OK) { return err; }
     s->vout_command = ulinear16_2_float(vreg, u16);
+
+    err = smb_read_word(vreg, PMBUS_VOUT_MIN, &u16);
+    if (err != ESP_OK) { return err; }
+    s->vout_min = ulinear16_2_float(vreg, u16);
+
+    err = smb_read_word(vreg, PMBUS_VOUT_MAX, &u16);
+    if (err != ESP_OK) { return err; }
+    s->vout_max = ulinear16_2_float(vreg, u16);
+
+    err = smb_read_word(vreg, PMBUS_VOUT_SCALE_LOOP, &u16);
+    if (err != ESP_OK) { return err; }
+    s->vout_scale_loop = slinear11_2_float(u16);
 
     err = smb_read_word(vreg, PMBUS_READ_VOUT, &u16);
     if (err != ESP_OK) { return err; }
@@ -1309,7 +1490,13 @@ void TPS546_LV08_log_snapshot(tps546_t *vreg, const TPS546_LV08_StatusSnapshot *
     // Context (always useful)
     ESP_LOGE(vreg->TAG, "OPERATION: 0x%02X  (ON bit: %d)", s->operation, !!(s->operation & 0x80));
     ESP_LOGE(vreg->TAG, "ON_OFF_CONFIG: 0x%02X", s->on_off_config);
+    ESP_LOGE(vreg->TAG, "PHASE: 0x%02X", s->phase);
+    ESP_LOGE(vreg->TAG, "STACK_CONFIG: 0x%04X", s->stack_config);
+    ESP_LOGE(vreg->TAG, "SYNC_CONFIG: 0x%02X", s->sync_config);
+    ESP_LOGE(vreg->TAG, "INTERLEAVE: 0x%04X", s->interleave);
     ESP_LOGE(vreg->TAG, "VOUT_COMMAND: %.3f V", s->vout_command);
+    ESP_LOGE(vreg->TAG, "VOUT_MIN/MAX: %.3f V / %.3f V", s->vout_min, s->vout_max);
+    ESP_LOGE(vreg->TAG, "VOUT_SCALE_LOOP: %.3f", s->vout_scale_loop);
     ESP_LOGE(vreg->TAG, "READ_VOUT:    %.3f V", s->read_vout);
     ESP_LOGE(vreg->TAG, "READ_VIN:     %.3f V", s->read_vin);
     ESP_LOGE(vreg->TAG, "READ_IOUT:    %.3f A", s->read_iout);

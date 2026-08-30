@@ -5,19 +5,13 @@
 #include <stdbool.h>
 #include "esp_err.h"
 #include "device_pins.h"
+#include "TPS546_config.h"
 
 #define THERMAL_MAX_SENSORS 2
 #define NAJA_DUO_VOLTAGE_DOMAINS 2
 #define GAMMA_HEX_VOLTAGE_DOMAINS 2
 
 typedef struct GlobalState GlobalState;
-typedef struct TPS546_CONFIG TPS546_CONFIG;
-
-extern const TPS546_CONFIG TPS546_CONFIG_DEFAULT;
-extern const TPS546_CONFIG TPS546_CONFIG_HEX;
-extern const TPS546_CONFIG TPS546_CONFIG_GAMMA_TURBO;
-extern const TPS546_CONFIG TPS546_CONFIG_NAJA_DUO;
-extern const TPS546_CONFIG TPS546_CONFIG_GAMMA_HEX;
 
 typedef enum
 {
@@ -152,9 +146,9 @@ static const FamilyConfig FAMILY_SUPRA_HEX   = { .id = SUPRA_HEX,   .name = "Sup
 static const FamilyConfig FAMILY_GAMMA_TURBO = { .id = GAMMA_TURBO, .name = "GammaTurbo", .asic = ASIC_BM1370,     .asic_count = 2, .max_power =  60, .power_offset = 10, .nominal_voltage = 12, .voltage_domains = 1, .swarm_color = "cyan",     .tps546_config = &TPS546_CONFIG_GAMMA_TURBO, };
 static const FamilyConfig FAMILY_NAJA_DUO    = { .id = NAJA_DUO,    .name = "NajaDuo",    .asic = ASIC_BM1373,     .asic_count = 2, .max_power =  60, .power_offset = 0,  .nominal_voltage = 12, .voltage_domains = NAJA_DUO_VOLTAGE_DOMAINS, .swarm_color = "magenta",  .tps546_config = &TPS546_CONFIG_NAJA_DUO, };
 static const FamilyConfig FAMILY_GAMMA_HEX   = { .id = GAMMA_HEX,   .name = "GammaHex",   .asic = ASIC_BM1370_HEX, .asic_count = 6, .max_power = 180, .power_offset = 25, .nominal_voltage = 12, .voltage_domains = GAMMA_HEX_VOLTAGE_DOMAINS, .swarm_color = "cyan", .tps546_config = &TPS546_CONFIG_GAMMA_HEX, };
-static const FamilyConfig FAMILY_LV07        = { .id = LV07,        .name = "LV07",       .asic = ASIC_BM1366,     .asic_count = 2, .max_power =  60, .power_offset = 7,  .nominal_voltage = 12, .voltage_domains = 1, .swarm_color = "orange",   };
-static const FamilyConfig FAMILY_LV08        = { .id = LV08,        .name = "LV08",       .asic = ASIC_BM1366,     .asic_count = 9, .max_power = 150, .power_offset = 30, .nominal_voltage = 12, .voltage_domains = 1, .swarm_color = "orange",   };
-static const FamilyConfig FAMILY_LV07_PRO    = { .id = LV07_PRO,    .name = "LV07Pro",    .asic = ASIC_BM1370,     .asic_count = 2, .max_power =  60, .power_offset = 7,  .nominal_voltage = 12, .voltage_domains = 2, .swarm_color = "orange",   };
+static const FamilyConfig FAMILY_LV07        = { .id = LV07,        .name = "LV07",       .asic = ASIC_BM1366,     .asic_count = 2, .max_power =  60, .power_offset = 7,  .nominal_voltage = 12, .voltage_domains = 1, .swarm_color = "orange",   .tps546_config = &TPS546_CONFIG_LV07, };
+static const FamilyConfig FAMILY_LV08        = { .id = LV08,        .name = "LV08",       .asic = ASIC_BM1366,     .asic_count = 9, .max_power = 150, .power_offset = 30, .nominal_voltage = 12, .voltage_domains = 1, .swarm_color = "orange",   .tps546_config = &TPS546_CONFIG_LV08, };
+static const FamilyConfig FAMILY_LV07_PRO    = { .id = LV07_PRO,    .name = "LV07Pro",    .asic = ASIC_BM1370,     .asic_count = 2, .max_power =  60, .power_offset = 7,  .nominal_voltage = 12, .voltage_domains = 2, .swarm_color = "orange",   .tps546_config = &TPS546_CONFIG_LV07_PRO, };
 
 static const FamilyConfig default_families[] = {
     FAMILY_MAX,

@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <esp_err.h>
 #include <stdbool.h>
+#include "freertos/FreeRTOS.h"
 
 #include "i2c_bitaxe.h"
 #include "TPS546_config.h"
@@ -22,13 +23,6 @@
 #define TPS546_LV08_OPERATION_OFF 0x00
 #define TPS546_LV08_OPERATION_ON  0x80
 
-#define TPS546_LV08_INIT_PHASE_SINGLE 0x00  /* Single-phase (Single TPS) */
-#define TPS546_LV08_INIT_PHASE_MULTI   0xFF  /* Multi-phase stack (Multi TPS) */
-
-#define TPS546_LV08_DEFAULT_FREQUENCY 650 /* KHz */
-
-
-
 typedef struct {
     i2c_master_dev_handle_t dev_handle;
     const char             *TAG;
@@ -37,18 +31,21 @@ typedef struct {
     float                   last_vout;
     float                   last_temp;
     bool                    fault_active;
+    TPS546_CONFIG           config;
+    TickType_t              power_good_grace_until;
 } tps546_t;
 
 typedef struct {
   uint16_t status_word;
   uint8_t  st_vout, st_input, st_iout, st_temp, st_cml, st_mfr, st_other;
-  uint8_t  operation, on_off_config;
+  uint8_t  operation, on_off_config, phase, sync_config;
+  uint16_t stack_config, interleave;
   float    read_vout, read_vin, read_iout;
   int      read_temp1;
-  float    vout_command;
+  float    vout_command, vout_min, vout_max, vout_scale_loop;
 } TPS546_LV08_StatusSnapshot;
 
-//typedef struct
+//typedef struct TPS546_CONFIG
 //{
 //  /* Phase readout configuration */
 //  uint8_t TPS546_INIT_PHASE; /* phase register configuration */
@@ -72,7 +69,13 @@ typedef struct {
 //  uint8_t TPS546_INIT_COMPENSATION_CONFIG[5];
 //  uint16_t TPS546_INIT_FREQUENCY; /* Switch frequency in KHz */
 //
-//} TPS546_LV08_CONFIG;
+//} TPS546_CONFIG;
+
+//extern const TPS546_CONFIG TPS546_CONFIG_DEFAULT;
+//extern const TPS546_CONFIG TPS546_CONFIG_HEX;
+//extern const TPS546_CONFIG TPS546_CONFIG_GAMMA_TURBO;
+//extern const TPS546_CONFIG TPS546_CONFIG_NAJA_DUO;
+//extern const TPS546_CONFIG TPS546_CONFIG_GAMMA_HEX;
 
 /* vin voltage */
 // #define TPS546_LV08_INIT_VIN_ON  11.0  /* V */
@@ -90,13 +93,13 @@ typedef struct {
 /* vout voltage */
 //#define TPS546_LV08_INIT_SCALE_LOOP 0.25 /* Voltage Scale factor */
 //#define TPS546_LV08_INIT_VOUT_MAX 3 /* V */
-#define TPS546_LV08_INIT_VOUT_OV_FAULT_LIMIT 1.25 /* %/100 above VOUT_COMMAND */
-#define TPS546_LV08_INIT_VOUT_OV_WARN_LIMIT  1.16 /* %/100 above VOUT_COMMAND */
-#define TPS546_LV08_INIT_VOUT_MARGIN_HIGH 1.1 /* %/100 above VOUT */
+#define TPS546_LV08_INIT_VOUT_OV_FAULT_LIMIT 1.25 /* multiplier of VOUT_COMMAND */
+#define TPS546_LV08_INIT_VOUT_OV_WARN_LIMIT  1.16 /* multiplier of VOUT_COMMAND */
+#define TPS546_LV08_INIT_VOUT_MARGIN_HIGH 1.1 /* multiplier of VOUT_COMMAND */
 //#define TPS546_LV08_INIT_VOUT_COMMAND 1.2 /* V absolute value */
-#define TPS546_LV08_INIT_VOUT_MARGIN_LOW 0.90 /* %/100 below VOUT */
-#define TPS546_LV08_INIT_VOUT_UV_WARN_LIMIT 0.90 /* %/100 below VOUT_COMMAND */
-#define TPS546_LV08_INIT_VOUT_UV_FAULT_LIMIT 0.75 /* %/100 below VOUT_COMMAND */
+#define TPS546_LV08_INIT_VOUT_MARGIN_LOW 0.90 /* multiplier of VOUT_COMMAND */
+#define TPS546_LV08_INIT_VOUT_UV_WARN_LIMIT 0.90 /* multiplier of VOUT_COMMAND */
+#define TPS546_LV08_INIT_VOUT_UV_FAULT_LIMIT 0.75 /* multiplier of VOUT_COMMAND */
 //#define TPS546_LV08_INIT_VOUT_MIN 1 /* v */
 
 /* iout current */
@@ -213,6 +216,8 @@ float TPS546_LV08_get_iout(tps546_t *vreg);
 float TPS546_LV08_get_vout(tps546_t *vreg);
 esp_err_t TPS546_LV08_set_vout(tps546_t *vreg, float volts);
 void TPS546_LV08_show_voltage_settings(tps546_t *vreg);
+esp_err_t TPS546_LV08_check_phase_currents(tps546_t *vreg, uint8_t phase_count, float minimum_current_a);
+uint8_t TPS546_LV08_get_phase_count(tps546_t *vreg);
 
 esp_err_t TPS546_LV08_check_status(tps546_t *vreg);
 esp_err_t TPS546_LV08_clear_faults(tps546_t *vreg);

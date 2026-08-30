@@ -56,6 +56,7 @@ SRCS
     "./thermal/TMP1075_LV07.c"
     "./thermal/thermal.c"
     "./thermal/PID.c"
+    "./power/TPS546_config.c"
     "./power/TPS546.c"
     "./power/TPS546_LV08.c"
     "./power/DS4432U.c"

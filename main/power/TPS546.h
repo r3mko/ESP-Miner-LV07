@@ -23,14 +23,14 @@ typedef struct GlobalState GlobalState;
 #define OPERATION_OFF 0x00
 #define OPERATION_ON  0x80
 
-#define TPS546_INIT_PHASE_SINGLE 0x00  /* Single-phase (Single TPS) */
-#define TPS546_INIT_PHASE_MULTI   0xFF  /* Multi-phase stack (Multi TPS) */
+//#define TPS546_INIT_PHASE_SINGLE 0x00  /* Single-phase (Single TPS) */
+//#define TPS546_INIT_PHASE_MULTI   0xFF  /* Multi-phase stack (Multi TPS) */
 
-#define TPS546_SINGLE_PHASE_STACK_CONFIG 0x0000
-#define TPS546_DUAL_PHASE_STACK_CONFIG   0x0001
-#define TPS546_FOUR_PHASE_STACK_CONFIG   0x0003
+//#define TPS546_SINGLE_PHASE_STACK_CONFIG 0x0000
+//#define TPS546_DUAL_PHASE_STACK_CONFIG   0x0001
+//#define TPS546_FOUR_PHASE_STACK_CONFIG   0x0003
 
-#define TPS546_DEFAULT_FREQUENCY 650  /* KHz */
+//#define TPS546_DEFAULT_FREQUENCY 650  /* KHz */
 
 typedef struct {
   uint16_t status_word;
@@ -68,11 +68,11 @@ typedef struct {
 //
 //} TPS546_CONFIG;
 
-extern const TPS546_CONFIG TPS546_CONFIG_DEFAULT;
-extern const TPS546_CONFIG TPS546_CONFIG_HEX;
-extern const TPS546_CONFIG TPS546_CONFIG_GAMMA_TURBO;
-extern const TPS546_CONFIG TPS546_CONFIG_NAJA_DUO;
-extern const TPS546_CONFIG TPS546_CONFIG_GAMMA_HEX;
+//extern const TPS546_CONFIG TPS546_CONFIG_DEFAULT;
+//extern const TPS546_CONFIG TPS546_CONFIG_HEX;
+//extern const TPS546_CONFIG TPS546_CONFIG_GAMMA_TURBO;
+//extern const TPS546_CONFIG TPS546_CONFIG_NAJA_DUO;
+//extern const TPS546_CONFIG TPS546_CONFIG_GAMMA_HEX;
 
 /* vin voltage */
 // #define TPS546_INIT_VIN_ON  11.0  /* V */
@@ -213,7 +213,6 @@ float TPS546_get_iout(void);
 float TPS546_get_vout(void);
 esp_err_t TPS546_set_vout(float volts);
 void TPS546_show_voltage_settings(void);
-void TPS546_print_status(void);
 esp_err_t TPS546_check_phase_currents(uint8_t phase_count, float minimum_current_a);
 uint8_t TPS546_get_phase_count(void);
 
