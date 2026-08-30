@@ -268,6 +268,9 @@ uint8_t VCORE_get_phase_count(GlobalState * GLOBAL_STATE)
     if (GLOBAL_STATE->DEVICE_CONFIG.TPS546) {
         return TPS546_get_phase_count();
     }
+    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546_LV08) {
+        return TPS546_LV08_get_phase_count(&vreg_0);
+    }
     return 1;
 }
 
