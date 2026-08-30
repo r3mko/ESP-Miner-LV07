@@ -5,13 +5,22 @@
 #include <stdbool.h>
 #include "esp_err.h"
 #include "device_pins.h"
-#include "TPS546_config.h"
 
 #define THERMAL_MAX_SENSORS 2
 #define NAJA_DUO_VOLTAGE_DOMAINS 2
 #define GAMMA_HEX_VOLTAGE_DOMAINS 2
 
 typedef struct GlobalState GlobalState;
+typedef struct TPS546_CONFIG TPS546_CONFIG;
+
+extern const TPS546_CONFIG TPS546_CONFIG_DEFAULT;
+extern const TPS546_CONFIG TPS546_CONFIG_HEX;
+extern const TPS546_CONFIG TPS546_CONFIG_GAMMA_TURBO;
+extern const TPS546_CONFIG TPS546_CONFIG_NAJA_DUO;
+extern const TPS546_CONFIG TPS546_CONFIG_GAMMA_HEX;
+extern const TPS546_CONFIG TPS546_CONFIG_LV07;
+extern const TPS546_CONFIG TPS546_CONFIG_LV08;
+extern const TPS546_CONFIG TPS546_CONFIG_LV07_PRO;
 
 typedef enum
 {
