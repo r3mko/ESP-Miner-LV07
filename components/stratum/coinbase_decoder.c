@@ -23,22 +23,37 @@ static void ensure_base58_init(void) {
     }
 }
 
-uint64_t coinbase_decode_varint(const uint8_t *data, int *offset) {
+uint64_t coinbase_decode_varint(const uint8_t *data, size_t data_len, int *offset) {
+    if (!data || !offset || (size_t)*offset >= data_len) {
+        return 0;
+    }
     uint8_t first_byte = data[*offset];
     (*offset)++;
     
     if (first_byte < 0xFD) {
         return first_byte;
     } else if (first_byte == 0xFD) {
-        uint64_t value = data[*offset] | (data[*offset + 1] << 8);
+        if ((size_t)*offset + 2 > data_len) {
+            *offset = data_len;
+            return 0;
+        }
+        uint64_t value = (uint64_t)data[*offset] | ((uint64_t)data[*offset + 1] << 8);
         *offset += 2;
         return value;
     } else if (first_byte == 0xFE) {
-        uint64_t value = data[*offset] | (data[*offset + 1] << 8) | 
-                        (data[*offset + 2] << 16) | (data[*offset + 3] << 24);
+        if ((size_t)*offset + 4 > data_len) {
+            *offset = data_len;
+            return 0;
+        }
+        uint64_t value = (uint64_t)data[*offset] | ((uint64_t)data[*offset + 1] << 8) | 
+                         ((uint64_t)data[*offset + 2] << 16) | ((uint64_t)data[*offset + 3] << 24);
         *offset += 4;
         return value;
     } else { // 0xFF
+        if ((size_t)*offset + 8 > data_len) {
+            *offset = data_len;
+            return 0;
+        }
         uint64_t value = 0;
         for (int i = 0; i < 8; i++) {
             value |= ((uint64_t)data[*offset + i]) << (i * 8);
@@ -145,13 +160,115 @@ void coinbase_decode_address_from_scriptpubkey(const uint8_t *script, size_t scr
     bin2hex(script, hex_len, output + 8, output_len - 8);
 }
 
-esp_err_t coinbase_process_notification(const mining_notify *notification,
-                                 const char *extranonce1,
-                                 int extranonce2_len,
-                                 const char *user_address,
-                                 bool decode_coinbase_tx,
-                                 mining_notification_result_t *result) {
-    if (!notification || !extranonce1 || !result) return ESP_ERR_INVALID_ARG;
+static esp_err_t parse_coinbase_suffix(const miner_job_t *job,
+                                       int offset,
+                                       const char *user_address,
+                                       const char *bech32_hrp,
+                                       bool is_testnet,
+                                       bool decode_coinbase_tx,
+                                       mining_notification_result_t *result)
+{
+    int coinbase_2_len = job->coinbase_suffix_len;
+    const uint8_t *coinbase_2_bin = job->coinbase_suffix;
+
+    // Read sequence (4 bytes) for BIP-54 detection
+    if (offset + 4 > coinbase_2_len) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    uint32_t nSequence = 0;
+    for (int i = 0; i < 4; i++) {
+        nSequence |= ((uint32_t)coinbase_2_bin[offset + i]) << (i * 8);
+    }
+    offset += 4;
+
+    // Decode output count
+    if (offset >= coinbase_2_len) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    uint64_t num_outputs = coinbase_decode_varint(coinbase_2_bin, coinbase_2_len, &offset);
+    if (num_outputs == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    result->output_count = 0;
+
+    // Parse each output
+    for (uint64_t i = 0; i < num_outputs; i++) {
+        // Read value (8 bytes, little-endian)
+        if (offset > coinbase_2_len || coinbase_2_len - offset < 8) {
+            return ESP_ERR_INVALID_ARG;
+        }
+
+        uint64_t value_satoshis = 0;
+        for (int j = 0; j < 8; j++) {
+            value_satoshis |= ((uint64_t)coinbase_2_bin[offset + j]) << (j * 8);
+        }
+        offset += 8;
+
+        // Add to total value with overflow protection
+        if (UINT64_MAX - result->total_value_satoshis < value_satoshis) {
+            return ESP_ERR_INVALID_ARG;
+        }
+        result->total_value_satoshis += value_satoshis;
+
+        // Read scriptPubKey length
+        if (offset >= coinbase_2_len) {
+            return ESP_ERR_INVALID_ARG;
+        }
+        uint64_t script_len = coinbase_decode_varint(coinbase_2_bin, coinbase_2_len, &offset);
+
+        if (offset > coinbase_2_len || script_len > (size_t)(coinbase_2_len - offset)) {
+            return ESP_ERR_INVALID_ARG;
+        }
+
+        if (decode_coinbase_tx) {
+            if (value_satoshis > 0) {
+                char output_address[MAX_ADDRESS_STRING_LEN];
+                coinbase_decode_address_from_scriptpubkey(coinbase_2_bin + offset, script_len, output_address, MAX_ADDRESS_STRING_LEN, bech32_hrp, is_testnet);
+                bool is_user_address = user_address ? (strncmp(user_address, output_address, strlen(output_address)) == 0) : false;
+
+                if (is_user_address) result->user_value_satoshis += value_satoshis;
+
+                if (i < MAX_COINBASE_TX_OUTPUTS) {
+                    strncpy(result->outputs[i].address, output_address, MAX_ADDRESS_STRING_LEN);
+                    result->outputs[i].value_satoshis = value_satoshis;
+                    result->outputs[i].is_user_output = is_user_address;
+                    result->output_count++;
+                }
+            } else {
+                if (i < MAX_COINBASE_TX_OUTPUTS) {
+                    coinbase_decode_address_from_scriptpubkey(coinbase_2_bin + offset, script_len, result->outputs[i].address, MAX_ADDRESS_STRING_LEN, bech32_hrp, is_testnet);
+                    result->outputs[i].value_satoshis = 0;
+                    result->outputs[i].is_user_output = false;
+                    result->output_count++;
+                }
+            }
+        }
+
+        offset += script_len;
+    }
+
+    // Read nLockTime (exact 4 bytes at the end of the transaction)
+    if (offset > coinbase_2_len || coinbase_2_len - offset != 4U) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    uint32_t nLockTime = 0;
+    for (int i = 0; i < 4; i++) {
+        nLockTime |= ((uint32_t)coinbase_2_bin[offset + i]) << (i * 8);
+    }
+
+    // Detect BIP-54 signaling: nLockTime = block_height - 1 AND nSequence != 0xffffffff
+    result->bip54_signaling = decode_coinbase_tx && (result->block_height > 0) &&
+                              (nLockTime == result->block_height - 1) && (nSequence != 0xffffffff);
+
+    return ESP_OK;
+}
+
+esp_err_t coinbase_process_miner_job(const miner_job_t *job,
+                                     const char *user_address,
+                                     bool decode_coinbase_tx,
+                                     mining_notification_result_t *result) {
+    if (!job || !result) return ESP_ERR_INVALID_ARG;
 
     // Initialize result
     result->total_value_satoshis = 0;
@@ -174,40 +291,33 @@ esp_err_t coinbase_process_notification(const mining_notify *notification,
         }
     }
 
-    // 1. Calculate difficulty
-    result->network_difficulty = networkDifficulty(notification->target);
-
-    // 2. Parse Coinbase 1 for ScriptSig info
-    int coinbase_1_len = strlen(notification->coinbase_1) / 2;
+    // Parse Coinbase prefix for ScriptSig info
+    int coinbase_1_len = job->coinbase_prefix_len;
     int coinbase_1_offset = 41; // Skip version (4), inputcount (1), prevhash (32), vout (4)
     
-    if (coinbase_1_len < coinbase_1_offset) return ESP_ERR_INVALID_ARG;
+    if (coinbase_1_len < coinbase_1_offset + 1) return ESP_ERR_INVALID_ARG;
 
-    uint8_t scriptsig_len;
-    hex2bin(notification->coinbase_1 + (coinbase_1_offset * 2), &scriptsig_len, 1);
-    coinbase_1_offset++;
+    uint8_t scriptsig_len = job->coinbase_prefix[coinbase_1_offset++];
 
-    if (coinbase_1_len < coinbase_1_offset) return ESP_ERR_INVALID_ARG;
+    if (coinbase_1_len < coinbase_1_offset + 1) return ESP_ERR_INVALID_ARG;
     
-    uint8_t block_height_len;
-    hex2bin(notification->coinbase_1 + (coinbase_1_offset * 2), &block_height_len, 1);
-    coinbase_1_offset++;
+    uint8_t block_height_len = job->coinbase_prefix[coinbase_1_offset++];
 
-    if (coinbase_1_len < coinbase_1_offset || block_height_len == 0 || block_height_len > 4) return ESP_ERR_INVALID_ARG;
+    if (block_height_len == 0 || block_height_len > 4 || coinbase_1_len < coinbase_1_offset + block_height_len) return ESP_ERR_INVALID_ARG;
 
     result->block_height = 0;
-    hex2bin(notification->coinbase_1 + (coinbase_1_offset * 2), (uint8_t *)&result->block_height, block_height_len);
+    memcpy(&result->block_height, job->coinbase_prefix + coinbase_1_offset, block_height_len);
     coinbase_1_offset += block_height_len;
 
     // Detect BIP-110 signaling: check if bit 4 (0x00000010) is set in version
-    result->bip110_signaling = decode_coinbase_tx && result->block_height < BIP110_SIGNAL_EXPIRY_BLOCK && (notification->version & (1U << BIP110_SIGNAL_BIT)) != 0;
+    result->bip110_signaling = decode_coinbase_tx && result->block_height < BIP110_SIGNAL_EXPIRY_BLOCK && (job->version & (1U << BIP110_SIGNAL_BIT)) != 0;
 
     // Calculate remaining scriptsig length (excluding block height part)
     int scriptsig_length = scriptsig_len - 1 - block_height_len;
-    size_t extranonce1_len = strlen(extranonce1) / 2;
+    size_t extranonce1_len = job->extranonce1_len;
+    size_t extranonce2_len = job->extranonce2_len;
     
-    // Check if scriptsig extends into coinbase_2 (meaning it covers the extranonces)
-    // If so, subtract extranonce lengths to get just the miner tag length
+    // Check if scriptsig extends into coinbase_suffix (meaning it covers the extranonces)
     if (coinbase_1_len - coinbase_1_offset < scriptsig_length) {
         scriptsig_length -= (extranonce1_len + extranonce2_len);
     }
@@ -221,132 +331,51 @@ esp_err_t coinbase_process_notification(const mining_notify *notification,
                 coinbase_1_tag_len = scriptsig_length;
             }
 
-            hex2bin(notification->coinbase_1 + (coinbase_1_offset * 2), (uint8_t *)tag, coinbase_1_tag_len);
+            if (coinbase_1_tag_len > 0) {
+                memcpy(tag, job->coinbase_prefix + coinbase_1_offset, coinbase_1_tag_len);
+            }
 
             int coinbase_2_tag_len = scriptsig_length - coinbase_1_tag_len;
-            int coinbase_2_len = strlen(notification->coinbase_2) / 2;
+            int coinbase_2_len = job->coinbase_suffix_len;
             
             if (coinbase_2_len >= coinbase_2_tag_len) {
                 if (coinbase_2_tag_len > 0) {
-                    hex2bin(notification->coinbase_2, (uint8_t *)tag + coinbase_1_tag_len, coinbase_2_tag_len);
+                    memcpy(tag + coinbase_1_tag_len, job->coinbase_suffix, coinbase_2_tag_len);
                 }
                 
                 // Filter non-printable characters
                 for (int i = 0; i < scriptsig_length; i++) {
                     if (!isprint((unsigned char)tag[i])) {
                         tag[i] = '.';
-                    }                }
+                    }
+                }
                 tag[scriptsig_length] = '\0';
                 result->scriptsig = tag;
             } else {
                 free(tag);
-                // Tag extraction failed due to length mismatch, but we can continue
             }
         }
     }
 
-    // 3. Parse Coinbase 2 for Outputs
-    // Calculate offset in coinbase_2 where outputs start
-    // Re-calculate raw remainder length without subtracting extranonces
+    // 3. Calculate offset in coinbase_2 where scriptSig ends and nSequence/outputs begin
     int raw_scriptsig_remainder = (scriptsig_len - 1 - block_height_len) - (coinbase_1_len - coinbase_1_offset);
-    
     int coinbase_2_offset = 0;
     if (raw_scriptsig_remainder > 0) {
-        // Subtract extranonce lengths to see what's left for coinbase_2
         int remainder_in_coinbase_2 = raw_scriptsig_remainder - (extranonce1_len + extranonce2_len);
         if (remainder_in_coinbase_2 > 0) {
             coinbase_2_offset = remainder_in_coinbase_2;
         }
     }
-    
-    int coinbase_2_len = strlen(notification->coinbase_2) / 2;
-    uint8_t *coinbase_2_bin = malloc(coinbase_2_len);
-    if (!coinbase_2_bin) {
-        return ESP_ERR_NO_MEM; // Memory error is fatal
-    }
-    
-    hex2bin(notification->coinbase_2, coinbase_2_bin, coinbase_2_len);
-    
-    int offset = coinbase_2_offset;
-    
-    // Read sequence (4 bytes) for BIP-54 detection
-    if (offset + 4 > coinbase_2_len) {
-        free(coinbase_2_bin);
-        return ESP_ERR_INVALID_ARG; // No room for outputs, but valid notification processed so far
-    }
-    uint32_t nSequence = 0;
-    for (int i = 0; i < 4; i++) {
-        nSequence |= ((uint32_t)coinbase_2_bin[offset + i]) << (i * 8);
-    }
-    offset += 4;
-    
-    // Decode output count
-    if (offset >= coinbase_2_len) {
-        free(coinbase_2_bin);
-        return ESP_ERR_INVALID_ARG;
-    }
-    
-    uint64_t num_outputs = coinbase_decode_varint(coinbase_2_bin, &offset);
-    result->output_count = 0;
-    
-    // Parse each output
-    for (uint64_t i = 0; i < num_outputs && offset < coinbase_2_len; i++) {
-        // Read value (8 bytes, little-endian)
-        if (offset + 8 > coinbase_2_len) break;
 
-        uint64_t value_satoshis = 0;
-        for (int i = 0; i < 8; i++) {
-            value_satoshis |= ((uint64_t)coinbase_2_bin[offset + i]) << (i * 8);
+    // 4. Parse Coinbase Suffix (nSequence, outputs, nLockTime)
+    esp_err_t err = parse_coinbase_suffix(job, coinbase_2_offset, user_address, bech32_hrp, is_testnet, decode_coinbase_tx, result);
+    if (err != ESP_OK) {
+        if (result->scriptsig) {
+            free(result->scriptsig);
+            result->scriptsig = NULL;
         }
-        offset += 8;
-
-        // Add to total value
-        result->total_value_satoshis += value_satoshis;
-
-        // Read scriptPubKey length
-        if (offset >= coinbase_2_len) break;
-        uint64_t script_len = coinbase_decode_varint(coinbase_2_bin, &offset);
-
-        if (offset + script_len > coinbase_2_len) break;
-
-        if (decode_coinbase_tx) {
-            if (value_satoshis > 0) {            
-                char output_address[MAX_ADDRESS_STRING_LEN];
-                coinbase_decode_address_from_scriptpubkey(coinbase_2_bin + offset, script_len, output_address, MAX_ADDRESS_STRING_LEN, bech32_hrp, is_testnet);
-                bool is_user_address = strncmp(user_address, output_address, strlen(output_address)) == 0;
-
-                if (is_user_address) result->user_value_satoshis += value_satoshis;
-
-                if (i < MAX_COINBASE_TX_OUTPUTS) {
-                    strncpy(result->outputs[i].address, output_address, MAX_ADDRESS_STRING_LEN);
-                    result->outputs[i].value_satoshis = value_satoshis;
-                    result->outputs[i].is_user_output = is_user_address;
-                    result->output_count++;
-                }
-            } else {
-                if (i < MAX_COINBASE_TX_OUTPUTS) {
-                    coinbase_decode_address_from_scriptpubkey(coinbase_2_bin + offset, script_len, result->outputs[i].address, MAX_ADDRESS_STRING_LEN, bech32_hrp, is_testnet);
-                    result->outputs[i].value_satoshis = 0;
-                    result->outputs[i].is_user_output = false;
-                    result->output_count++;
-                }
-            }
-        }
-
-        offset += script_len;
+        return err;
     }
-    
-    // Read nLockTime (4 bytes at the end of the transaction) for BIP-54 detection
-    uint32_t nLockTime = 0;
-    if (offset + 4 <= coinbase_2_len) {
-        for (int i = 0; i < 4; i++) {
-            nLockTime |= ((uint32_t)coinbase_2_bin[offset + i]) << (i * 8);
-        }
-    }
-    
-    // Detect BIP-54 signaling: nLockTime = block_height - 1 AND nSequence != 0xffffffff
-    result->bip54_signaling = decode_coinbase_tx && (nLockTime == result->block_height - 1) && (nSequence != 0xffffffff);
-    
-    free(coinbase_2_bin);
+
     return ESP_OK;
 }
