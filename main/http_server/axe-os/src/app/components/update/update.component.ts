@@ -1,4 +1,5 @@
 import { Component, ViewChild, ElementRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, map } from 'rxjs';
 import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
 import { getHttpErrorMessage } from 'src/app/utils/error-handler';
@@ -59,7 +60,7 @@ export class UpdateComponent {
     this.info$ = this.liveDataService.info$;
 
     // Reload page if firmware version changes
-    this.liveDataService.info$.subscribe(info => {
+    this.liveDataService.info$.pipe(takeUntilDestroyed()).subscribe(info => {
       if (this.currentVersion === undefined) {
         this.currentVersion = info.version;
       } else if (info.version !== this.currentVersion) {
@@ -68,7 +69,7 @@ export class UpdateComponent {
     });
 
     // Reload page when device comes back online after a successful update
-    this.liveDataService.connected$.subscribe(connected => {
+    this.liveDataService.connected$.pipe(takeUntilDestroyed()).subscribe(connected => {
       if (connected && this.updateStatus === 'success') {
         window.location.reload();
       }
