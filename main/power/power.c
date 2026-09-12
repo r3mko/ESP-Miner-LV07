@@ -1,3 +1,5 @@
+#include <math.h>
+
 #include "TPS546.h"
 #include "TPS546_LV08.h"
 #include "INA260.h"
@@ -85,7 +87,7 @@ float Power_get_vreg_temp(GlobalState * GLOBAL_STATE)
         float t1 = TPS546_LV08_get_temperature(v1);
         float t2 = TPS546_LV08_get_temperature(v2);
 
-        return (t0 + t1 + t2) / 3.0f;
+        return fmaxf(t0, fmaxf(t1, t2));
     }
 
     return 0.0;
