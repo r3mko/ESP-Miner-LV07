@@ -4,10 +4,12 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { ProgressbarComponent } from '../progressbar/progressbar.component';
 import { provideToastr, ToastrService } from 'ngx-toastr';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import { CheckboxComponent } from '../checkbox/checkbox.component';
 import { ModalComponent } from '../modal/modal.component';
+import { SystemInfo } from 'src/app/generated/models';
+import { LiveDataService } from 'src/app/services/live-data.service';
 import { SystemApiService } from 'src/app/services/system.service';
 import { getHttpErrorMessage } from 'src/app/utils/error-handler';
 import { UpdateComponent } from './update.component';
@@ -19,6 +21,8 @@ describe('UpdateComponent', () => {
   let toastrService: ToastrService;
   let firmwareInput: HTMLInputElement;
   let websiteInput: HTMLInputElement;
+  let infoSubject: Subject<SystemInfo>;
+  let connectedSubject: Subject<boolean>;
 
   const createFile = (filename: string): File => new File(['firmware'], filename);
   const createFileSelectionEvent = (file: File): Event => ({
@@ -26,10 +30,24 @@ describe('UpdateComponent', () => {
   } as unknown as Event);
 
   beforeEach(() => {
+    infoSubject = new Subject<SystemInfo>();
+    connectedSubject = new Subject<boolean>();
+
     TestBed.configureTestingModule({
       declarations: [UpdateComponent, ModalComponent],
       imports: [CheckboxComponent, ProgressbarComponent, FormsModule],
-      providers: [provideHttpClient(), provideToastr()]
+      providers: [
+        provideHttpClient(),
+        provideToastr(),
+        // Keep live polling from triggering a real page reload after a mocked upload.
+        {
+          provide: LiveDataService,
+          useValue: {
+            info$: infoSubject.asObservable(),
+            connected$: connectedSubject.asObservable(),
+          },
+        },
+      ]
     });
     fixture = TestBed.createComponent(UpdateComponent);
     component = fixture.componentInstance;
@@ -45,6 +63,16 @@ describe('UpdateComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should stop listening for reload triggers when destroyed', () => {
+    expect(infoSubject.observed).toBeTrue();
+    expect(connectedSubject.observed).toBeTrue();
+
+    fixture.destroy();
+
+    expect(infoSubject.observed).toBeFalse();
+    expect(connectedSubject.observed).toBeFalse();
   });
 
   it('should map board 312 to the MCN16R2 firmware', () => {
