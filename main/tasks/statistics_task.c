@@ -176,11 +176,15 @@ void statistics_task(void * pvParameters)
                 statsData.errorPercentage = sys_module->error_percentage;
                 statsData.chipTemperature1 = power_management->chip_temp_avg;
                 statsData.chipTemperature2 = power_management->chip_temp2_avg;
-                if (power_management->chip_temp2_avg > 0) {
-                    statsData.chipTemperature = (power_management->chip_temp_avg + power_management->chip_temp2_avg) / 2.0; // average of both temps
+                bool temp1_valid = isfinite(statsData.chipTemperature1) && statsData.chipTemperature1 > 0;
+                bool temp2_valid = isfinite(statsData.chipTemperature2) && statsData.chipTemperature2 > 0;
+                if (temp1_valid && temp2_valid) {
+                    statsData.chipTemperature = (statsData.chipTemperature1 + statsData.chipTemperature2) / 2.0f;
+                } else if (temp1_valid) {
+                    statsData.chipTemperature = statsData.chipTemperature1;
                 } else {
-                    statsData.chipTemperature = power_management->chip_temp_avg;
-                }
+                    statsData.chipTemperature = temp2_valid ? statsData.chipTemperature2 : -1.0f;
+                } // average of both temps or whichever is valid, or -1 if neither is valid
                 statsData.vrTemperature = power_management->vr_temp;
                 statsData.power = power_management->power;
                 statsData.voltage = power_management->voltage;

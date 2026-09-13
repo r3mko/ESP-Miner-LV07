@@ -1456,7 +1456,13 @@ export class HomeComponent implements OnInit, OnDestroy {
       case eChartLabel.hashrate_10m:       return info.hashRate_10m;
       case eChartLabel.hashrate_1h:        return info.hashRate_1h;
       case eChartLabel.errorPercentage:    return info.errorPercentage;
-      case eChartLabel.asicTemp:           return info.temp2 > 0 ? (info.temp + info.temp2) / 2 : info.temp; // average of both temps
+      case eChartLabel.asicTemp: {
+        const temp1Valid = Number.isFinite(info.temp) && info.temp > 0;
+        const temp2Valid = Number.isFinite(info.temp2) && info.temp2 > 0;
+        if (temp1Valid && temp2Valid) return (info.temp + info.temp2) / 2;
+        if (temp1Valid) return info.temp;
+        return temp2Valid ? info.temp2 : -1;
+      } // average of both temps or whichever is valid, or -1 if neither is valid
       case eChartLabel.asicTemp1:          return info.temp;
       case eChartLabel.asicTemp2:          return info.temp2;
       case eChartLabel.vrTemp:             return info.vrTemp;
