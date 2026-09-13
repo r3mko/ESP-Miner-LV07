@@ -31,7 +31,7 @@ void Power_get_output(GlobalState * GLOBAL_STATE, float * power_out, float * cur
         float i1 = TPS546_LV08_get_iout(v1);
         float i2 = TPS546_LV08_get_iout(v2);
 
-        cur_val = ((i0 + i1 + i2) / 3.0f) * 1000.0f;
+        cur_val = (i0 + i1 + i2) * 1000.0f;
 
         // calculate regulator power (in watts)
         float p0 = TPS546_LV08_get_vout(v0) * i0;
