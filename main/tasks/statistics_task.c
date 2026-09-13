@@ -174,10 +174,10 @@ void statistics_task(void * pvParameters)
                 statsData.hashrate_10m = sys_module->hashrate_10m;
                 statsData.hashrate_1h = sys_module->hashrate_1h;
                 statsData.errorPercentage = sys_module->error_percentage;
+                statsData.chipTemperature1 = power_management->chip_temp_avg;
+                statsData.chipTemperature2 = power_management->chip_temp2_avg;
                 if (power_management->chip_temp2_avg > 0) {
                     statsData.chipTemperature = (power_management->chip_temp_avg + power_management->chip_temp2_avg) / 2.0; // average of both temps
-                    statsData.chipTemperature1 = power_management->chip_temp_avg;
-                    statsData.chipTemperature2 = power_management->chip_temp2_avg;
                 } else {
                     statsData.chipTemperature = power_management->chip_temp_avg;
                 }
