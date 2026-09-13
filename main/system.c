@@ -407,6 +407,21 @@ esp_err_t SYSTEM_init_peripherals(GlobalState * GLOBAL_STATE) {
         return ret;
     }
 
+    // Complete staggered LV08 power startup before ASIC detection.
+    if (GLOBAL_STATE->DEVICE_CONFIG.TPS546_LV08 && !GLOBAL_STATE->SELF_TEST_MODULE.is_active) {
+        uint16_t voltage = nvs_config_get_u16(NVS_CONFIG_ASIC_VOLTAGE);
+        ret = VCORE_set_voltage(GLOBAL_STATE, (float)voltage / 1000.0f);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "LV08 VCORE startup failed: %s", esp_err_to_name(ret));
+            esp_err_t shutdown_ret = VCORE_set_voltage(GLOBAL_STATE, 0.0f);
+            if (shutdown_ret != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to disable LV08 regulators: %s", esp_err_to_name(shutdown_ret));
+            }
+            return ret;
+        }
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+
     return ESP_OK;
 }
 
