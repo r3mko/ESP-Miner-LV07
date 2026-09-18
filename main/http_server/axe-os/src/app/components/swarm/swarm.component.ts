@@ -1,4 +1,5 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { isFrequencyLow } from 'src/app/utils/common-functions';
 import { Component, OnDestroy, OnInit, ViewChild, HostListener } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, Validators, FormControl, ValidationErrors } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
@@ -772,7 +773,7 @@ return this.swarm.filter(axe =>
         return { color: 'red', msg: 'Overheated' };
       case !!axe.power_fault:
         return { color: 'red', msg: 'Power Fault' };
-      case !axe.frequency || axe.frequency < 400:
+      case isFrequencyLow(axe.frequency, axe.frequencyOptions):
         return { color: 'orange', msg: 'Frequency Low' };
       case axe.isUsingFallbackStratum === 1:
         return { color: 'orange', msg: 'Fallback Pool' };
