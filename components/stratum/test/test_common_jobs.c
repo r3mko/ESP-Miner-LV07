@@ -94,19 +94,34 @@ TEST_CASE("job builder encodes zero short and wide extranonces",
     TEST_ASSERT_EQUAL_UINT32(0, mining_allocator_fault_injector_calls());
 }
 
-TEST_CASE("coinbase allocation failure produces a zero merkle root",
+TEST_CASE("coinbase hash failures preserve common job output and permit recovery",
           "[mining][asic-job]")
 {
-    static uint8_t bytes[1025];
-    uint8_t zero[32] = {0};
+    uint8_t prefix[] = {1, 2}, suffix[] = {6, 7}, expected_hash[32];
+    TEST_ASSERT_EQUAL_UINT32(32, hex2bin(
+        "a669a4141f56b33d635a76c538dabafb72d136de59cc6373260376376dcba307",
+        expected_hash, sizeof(expected_hash)));
     miner_job_t source = {
-        .type = JOB_TYPE_V1, .coinbase_prefix = bytes, .coinbase_prefix_len = 1024,
-        .extranonce2_len = 1,
+        .job_id = "hash-failure",
+        .coinbase_prefix = prefix, .coinbase_prefix_len = sizeof(prefix),
+        .extranonce1 = {3}, .extranonce1_len = 1, .extranonce2_len = 2,
+        .coinbase_suffix = suffix, .coinbase_suffix_len = sizeof(suffix),
     };
-    asic_job_t job;
-    mining_allocator_fault_injector_reset(1);
-    TEST_ASSERT_TRUE(mining_build_asic_job(&source, 0, 0, &job));
-    TEST_ASSERT_EQUAL_UINT32(1, mining_allocator_fault_injector_calls());
-    TEST_ASSERT_EQUAL_MEMORY(zero, job.merkle_root, 32);
-    mining_allocator_fault_injector_reset(0);
+    const miner_job_type_t types[] = {JOB_TYPE_V1, JOB_TYPE_SV2_EXTENDED};
+    asic_job_t job, original;
+    memset(&original, 0xa5, sizeof(original));
+    for (size_t type = 0; type < sizeof(types) / sizeof(types[0]); ++type) {
+        source.type = types[type];
+        for (size_t failure_at = 1; failure_at <= 7; ++failure_at) {
+            memcpy(&job, &original, sizeof(job));
+            mining_hash_fault_injector_reset(failure_at);
+            TEST_ASSERT_FALSE(mining_build_asic_job(&source, 0x0504, 0, &job));
+            TEST_ASSERT_EQUAL_MEMORY(&original, &job, sizeof(job));
+            TEST_ASSERT_EQUAL_UINT32(failure_at <= 6 ? 1 : 0, mining_hash_fault_injector_abort_calls());
+            TEST_ASSERT_TRUE(mining_build_asic_job(&source, 0x0504, 0, &job));
+            TEST_ASSERT_EQUAL_MEMORY(expected_hash, job.merkle_root, sizeof(expected_hash));
+            TEST_ASSERT_EQUAL_STRING("0405", job.extranonce2);
+        }
+    }
+    mining_hash_fault_injector_reset(0);
 }

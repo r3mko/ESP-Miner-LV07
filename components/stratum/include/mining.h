@@ -9,7 +9,8 @@
 bool mining_build_asic_job(const miner_job_t *source, uint64_t extranonce2,
                            uint32_t version, asic_job_t *destination);
 
-void calculate_coinbase_tx_hash_bin(const uint8_t *prefix, size_t prefix_len,
+/* Returns false on hashing failure or NULL destination; clears a non-NULL destination on failure. */
+bool calculate_coinbase_tx_hash_bin(const uint8_t *prefix, size_t prefix_len,
                                     const uint8_t *extranonce_prefix, size_t ep_len,
                                     const uint8_t *extranonce_2, size_t e2_len,
                                     const uint8_t *suffix, size_t suffix_len,

@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include "mining_allocator_fault_injector.h"
+#include "mining_hash_fault_injector.h"
 
 /* Keep injected allocation failures isolated from other tasks. */
 #define mining_build_asic_job mining_test_build_asic_job

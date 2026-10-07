@@ -650,7 +650,7 @@ TEST_CASE("zero-length extranonce waits for new work and preserves owned metadat
     job_pipeline_harness_result_free(&result);
 }
 
-TEST_CASE("large coinbase job uses heap hashing and retains extranonce order",
+TEST_CASE("large coinbase job streams hashing and retains extranonce order",
           "[mining][job-building][job-task]")
 {
     (void)prepare_followup_job(1, true);
@@ -667,11 +667,40 @@ TEST_CASE("large coinbase job uses heap hashing and retains extranonce order",
         }, events, sizeof(events) / sizeof(events[0]), &result);
 
     TEST_ASSERT_EQUAL_UINT32(2, result.job_count);
-    TEST_ASSERT_EQUAL_UINT32(4, result.allocation_count);
+    TEST_ASSERT_EQUAL_UINT32(2, result.allocation_count);
     TEST_ASSERT_EQUAL_UINT32(1, result.coinbase_decode_count);
     TEST_ASSERT_EQUAL_STRING("00", result.jobs[0]->extranonce2);
     TEST_ASSERT_EQUAL_STRING("01", result.jobs[1]->extranonce2);
     assert_packet_merkle("8f15704dd6a5716fe3390d9ee30f6081fa9a52e7b0c68650dbbebbad69f306a3", result.jobs[0]);
     assert_packet_merkle("81d3867d9d36bed64c0a3ecdae4792715cb93cd46f02f9dc3720d004b2850a23", result.jobs[1]);
     job_pipeline_harness_result_free(&result);
+}
+
+TEST_CASE("coinbase hash failures skip sending work and permit the next cycle",
+          "[mining][job-building][job-task]")
+{
+    const job_pipeline_harness_event_t events[] = {
+        { .type = JOB_PIPELINE_HARNESS_NOTIFY, .slot = 0 },
+        { .type = JOB_PIPELINE_HARNESS_TIMEOUT },
+    };
+    // This fixture uses setup, three non-empty segments, finish, and the second hash.
+    for (size_t failure_at = 1; failure_at <= 6; ++failure_at) {
+        (void)prepare_followup_job(1, false);
+        job_pipeline_harness_result_t result;
+        job_pipeline_harness_run(
+            (job_pipeline_harness_config_t) {
+                .hardware_version_rolling = true,
+                .asic_initialized = true,
+                .job_frequency_ms = 1,
+                .hash_failure_at = failure_at,
+            }, events, sizeof(events) / sizeof(events[0]), &result);
+
+        TEST_ASSERT_EQUAL_UINT32(2, result.allocation_count);
+        TEST_ASSERT_EQUAL_UINT32(failure_at <= 5 ? 1 : 0, result.hash_abort_count);
+        TEST_ASSERT_EQUAL_UINT32(1, result.job_count);
+        TEST_ASSERT_EQUAL_STRING("followup", result.jobs[0]->job_id);
+        TEST_ASSERT_EQUAL_STRING("01", result.jobs[0]->extranonce2);
+        assert_packet_merkle("c528516952ea823ab4cd034973550175c63ebf0f49cb126ccee58049a3fc487c", result.jobs[0]);
+        job_pipeline_harness_result_free(&result);
+    }
 }
