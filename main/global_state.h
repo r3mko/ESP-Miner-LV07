@@ -123,6 +123,7 @@ typedef struct SystemModule
 typedef struct SelfTestNonceMeasurement
 {
     bool is_active;
+    uint8_t target[32];
     uint64_t accepted_count;
     uint64_t rejected_count;
     double hashes;

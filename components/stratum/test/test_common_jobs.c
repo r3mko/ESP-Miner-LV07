@@ -1,6 +1,7 @@
 #include "unity.h"
 #include "mining_test_bindings.h"
 #include "mining.h"
+#include "utils.h"
 #include <string.h>
 
 TEST_CASE("job rolling requires a job extranonce and coinbase prefix together",
@@ -42,8 +43,9 @@ TEST_CASE("standard jobs copy header fields and submission metadata",
         .type = JOB_TYPE_SV2_STANDARD, .job_id = "standard",
         .version = 0x20000004, .version_mask = 0x1fffe000,
         .ntime = 0x64658bd8, .nbits = 0x1705dd01,
-        .pool_diff = -1.0, .pool_id = 255, .extranonce2_len = 255,
+        .pool_id = 255, .extranonce2_len = 255,
     };
+    diff_to_target(16.0, source.pool_target);
     memset(source.prev_hash, 0x5a, sizeof(source.prev_hash));
     memset(source.merkle_root, 0x71, sizeof(source.merkle_root));
     asic_job_t job;
@@ -53,7 +55,7 @@ TEST_CASE("standard jobs copy header fields and submission metadata",
     TEST_ASSERT_EQUAL_HEX32(source.ntime, job.ntime);
     TEST_ASSERT_EQUAL_HEX32(source.nbits, job.nbits);
     TEST_ASSERT_EQUAL_UINT32(0, job.starting_nonce);
-    TEST_ASSERT_EQUAL_DOUBLE(-1.0, job.pool_diff);
+    TEST_ASSERT_EQUAL_MEMORY(source.pool_target, job.pool_target, 32);
     TEST_ASSERT_EQUAL_UINT8(255, job.pool_id);
     TEST_ASSERT_EQUAL(JOB_TYPE_SV2_STANDARD, job.source_type);
     TEST_ASSERT_EQUAL_STRING("", job.extranonce2);

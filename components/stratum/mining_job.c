@@ -14,10 +14,10 @@ bool mining_build_asic_job(const miner_job_t *source, uint64_t extranonce2,
         .version_mask = source->version_mask,
         .ntime = source->ntime,
         .nbits = source->nbits,
-        .pool_diff = source->pool_diff,
         .pool_id = source->pool_id,
         .source_type = source->type,
     };
+    memcpy(job.pool_target, source->pool_target, sizeof(job.pool_target));
     memcpy(job.prev_hash, source->prev_hash, sizeof(job.prev_hash));
     memcpy(job.job_id, source->job_id, sizeof(job.job_id));
     if (source->type == JOB_TYPE_SV2_STANDARD) {
