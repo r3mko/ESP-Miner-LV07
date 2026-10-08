@@ -124,6 +124,7 @@ void job_pipeline_harness_run(
     harness_result = result;
     harness_job_frequency_ms = config.job_frequency_ms;
     mining_allocator_fault_injector_reset(config.allocation_failure_at);
+    mining_hash_fault_injector_reset(config.hash_failure_at);
 
     int exit_reason = setjmp(harness_exit);
     if (exit_reason == 0) {
@@ -132,11 +133,13 @@ void job_pipeline_harness_run(
 
     result->active_job_slot = harness_state.active_job_slot_idx;
     result->allocation_count = mining_allocator_fault_injector_calls();
+    result->hash_abort_count = mining_hash_fault_injector_abort_calls();
     harness_events = NULL;
     harness_event_count = 0;
     harness_event_index = 0;
     harness_result = NULL;
     mining_allocator_fault_injector_reset(0);
+    mining_hash_fault_injector_reset(0);
 }
 
 void job_pipeline_harness_result_free(job_pipeline_harness_result_t *result)
