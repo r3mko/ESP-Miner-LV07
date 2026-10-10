@@ -1723,7 +1723,7 @@ static esp_err_t GET_system_statistics(httpd_req_t * req)
     }
 
     size_t len = 0;
-    yyjson_write_flag flg = YYJSON_WRITE_FP_TO_FIXED(2);
+    yyjson_write_flag flg = YYJSON_WRITE_FP_TO_FIXED(2) | YYJSON_WRITE_INF_AND_NAN_AS_NULL;
     char *json_str = yyjson_mut_write_opts(doc, flg, alc, &len, NULL);
     if (!json_str) {
         yyjson_mut_doc_free(doc);
