@@ -1,4 +1,6 @@
 #include <stdint.h>
+#include <inttypes.h>
+#include <stdio.h>
 #include <pthread.h>
 #include <math.h>
 #include <string.h>
@@ -16,11 +18,42 @@
 
 static const char * TAG = "statistics_task";
 
+const char * const STATS_LABELS[SRC_NONE] = {
+    [SRC_HASHRATE] = "hashrate",
+    [SRC_HASHRATE_1m] = "hashrate_1m",
+    [SRC_HASHRATE_10m] = "hashrate_10m",
+    [SRC_HASHRATE_1h] = "hashrate_1h",
+    [SRC_ERROR_PERCENTAGE] = "errorPercentage",
+    [SRC_ASIC_TEMP] = "asicTemp",
+    [SRC_ASIC_TEMP1] = "asicTemp1",
+    [SRC_ASIC_TEMP2] = "asicTemp2",
+    [SRC_VR_TEMP] = "vrTemp",
+    [SRC_ASIC_VOLTAGE] = "asicVoltage",
+    [SRC_VOLTAGE] = "voltage",
+    [SRC_POWER] = "power",
+    [SRC_CURRENT] = "current",
+    [SRC_FAN_SPEED] = "fanSpeed",
+    [SRC_FAN_RPM] = "fanRpm",
+    [SRC_FAN2_RPM] = "fan2Rpm",
+    [SRC_WIFI_RSSI] = "wifiRssi",
+    [SRC_FREE_HEAP] = "freeHeap",
+    [SRC_RESPONSE_TIME] = "responseTime",
+};
+
 static StatisticsDataPtr statisticsBuffer;
 static uint16_t statisticsDataSize;
 static pthread_mutex_t statisticsDataLock = PTHREAD_MUTEX_INITIALIZER;
 
 static const uint16_t maxDataCount = MAX_STATISTICS_COUNT;
+
+static void formatStatisticFloat(char *token, float value)
+{
+    if (isfinite(value)) {
+        snprintf(token, STATS_TOKEN_LEN, "%.2f", value);
+    } else {
+        strcpy(token, "null");
+    }
+}
 
 void createStatisticsBuffer()
 {
@@ -127,24 +160,17 @@ bool addStatisticData(StatisticsDataPtr data, uint16_t statsFrequency)
     return result;
 }
 
-bool getStatisticData(uint16_t index, StatisticsDataPtr dataOut)
+void withStatisticsData(StatisticsReaderCallback cb, void *user_ctx)
 {
-    bool result = false;
-
-    if ((NULL == statisticsBuffer) || (NULL == dataOut) || (maxDataCount <= index)) {
-        return result;
+    if (!cb) {
+        return;
     }
 
     pthread_mutex_lock(&statisticsDataLock);
 
-    if ((NULL != statisticsBuffer) && (index < statisticsDataSize)) {
-        *dataOut = statisticsBuffer[index];
-        result = true;
-    }
+    cb(statisticsBuffer, (statisticsBuffer != NULL) ? statisticsDataSize : 0, user_ctx);
 
     pthread_mutex_unlock(&statisticsDataLock);
-
-    return result;
 }
 
 void statistics_task(void * pvParameters)
@@ -169,33 +195,37 @@ void statistics_task(void * pvParameters)
                 get_wifi_current_rssi(&wifiRSSI);
 
                 statsData.timestamp = currentTime;
-                statsData.hashrate = sys_module->current_hashrate;
-                statsData.hashrate_1m = sys_module->hashrate_1m;
-                statsData.hashrate_10m = sys_module->hashrate_10m;
-                statsData.hashrate_1h = sys_module->hashrate_1h;
-                statsData.errorPercentage = sys_module->error_percentage;
-                statsData.chipTemperature1 = power_management->chip_temp_avg;
-                statsData.chipTemperature2 = power_management->chip_temp2_avg;
-                bool temp1_valid = isfinite(statsData.chipTemperature1) && statsData.chipTemperature1 > 0;
-                bool temp2_valid = isfinite(statsData.chipTemperature2) && statsData.chipTemperature2 > 0;
+                float chipTemperature1 = power_management->chip_temp_avg;
+                float chipTemperature2 = power_management->chip_temp2_avg;
+                float chipTemperature;
+                bool temp1_valid = isfinite(chipTemperature1) && chipTemperature1 > 0;
+                bool temp2_valid = isfinite(chipTemperature2) && chipTemperature2 > 0;
                 if (temp1_valid && temp2_valid) {
-                    statsData.chipTemperature = (statsData.chipTemperature1 + statsData.chipTemperature2) / 2.0f;
+                    chipTemperature = (chipTemperature1 + chipTemperature2) / 2.0f;
                 } else if (temp1_valid) {
-                    statsData.chipTemperature = statsData.chipTemperature1;
+                    chipTemperature = chipTemperature1;
                 } else {
-                    statsData.chipTemperature = temp2_valid ? statsData.chipTemperature2 : -1.0f;
+                    chipTemperature = temp2_valid ? chipTemperature2 : -1.0f;
                 } // average of both temps or whichever is valid, or -1 if neither is valid
-                statsData.vrTemperature = power_management->vr_temp;
-                statsData.power = power_management->power;
-                statsData.voltage = power_management->voltage;
-                statsData.current = power_management->current;
-                statsData.coreVoltageActual = power_management->core_voltage;
-                statsData.fanSpeed = power_management->fan_perc;
-                statsData.fanRPM = power_management->fan_rpm;
-                statsData.fan2RPM = power_management->fan2_rpm;
-                statsData.wifiRSSI = wifiRSSI;
-                statsData.freeHeap = esp_get_free_heap_size();
-                statsData.responseTime = sys_module->response_time;
+                formatStatisticFloat(statsData.tokens[SRC_HASHRATE], sys_module->current_hashrate);
+                formatStatisticFloat(statsData.tokens[SRC_HASHRATE_1m], sys_module->hashrate_1m);
+                formatStatisticFloat(statsData.tokens[SRC_HASHRATE_10m], sys_module->hashrate_10m);
+                formatStatisticFloat(statsData.tokens[SRC_HASHRATE_1h], sys_module->hashrate_1h);
+                formatStatisticFloat(statsData.tokens[SRC_ERROR_PERCENTAGE], sys_module->error_percentage);
+                formatStatisticFloat(statsData.tokens[SRC_ASIC_TEMP], chipTemperature);
+                formatStatisticFloat(statsData.tokens[SRC_ASIC_TEMP1], chipTemperature1);
+                formatStatisticFloat(statsData.tokens[SRC_ASIC_TEMP2], chipTemperature2);
+                formatStatisticFloat(statsData.tokens[SRC_VR_TEMP], power_management->vr_temp);
+                snprintf(statsData.tokens[SRC_ASIC_VOLTAGE], STATS_TOKEN_LEN, "%d", (int)power_management->core_voltage);
+                formatStatisticFloat(statsData.tokens[SRC_VOLTAGE], power_management->voltage);
+                formatStatisticFloat(statsData.tokens[SRC_POWER], power_management->power);
+                formatStatisticFloat(statsData.tokens[SRC_CURRENT], power_management->current);
+                formatStatisticFloat(statsData.tokens[SRC_FAN_SPEED], power_management->fan_perc);
+                snprintf(statsData.tokens[SRC_FAN_RPM], STATS_TOKEN_LEN, "%u", (unsigned int)power_management->fan_rpm);
+                snprintf(statsData.tokens[SRC_FAN2_RPM], STATS_TOKEN_LEN, "%u", (unsigned int)power_management->fan2_rpm);
+                snprintf(statsData.tokens[SRC_WIFI_RSSI], STATS_TOKEN_LEN, "%d", (int)wifiRSSI);
+                snprintf(statsData.tokens[SRC_FREE_HEAP], STATS_TOKEN_LEN, "%" PRIu32, esp_get_free_heap_size());
+                formatStatisticFloat(statsData.tokens[SRC_RESPONSE_TIME], sys_module->response_time);
 
                 addStatisticData(&statsData, configStatsFrequency);
             }
